@@ -27,7 +27,7 @@ make install
 For example user belongs the group "jailed", then the coresponding configuration file will be "/usr/local/etc/jsh.d/group.jailed.conf".
 We only allow users of jailed group to excecute comands: id, pwd, ls, vim, ssh, crontab -e .
 We also allow users of jailed group to use scp to upload/download file in HOME directory, or /home/public .
-The jsh will try to load the group configuration file, and then try to load the user configuration file, the purpose of this is to minimize the configurations. If additional commands are needed for individual users in the group, such as the “admin”, then go to configure /usr/local/etc/jsh.d/user.admin.conf and add other commands as needed. See the last section for configuration file descriptions.
+The jsh will try to load the group configuration first, and then try to load the user configuration. The purpose of this is to minimize the configurations. If additional commands are needed for individual users in the group, such as the “admin”, then go to configure /usr/local/etc/jsh.d/user.admin.conf and add other commands. See the last section for configuration file descriptions.
 
 ```sh
 # Allow acp, and acces extra /home/public besides HOME.
