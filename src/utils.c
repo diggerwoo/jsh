@@ -31,6 +31,8 @@
 #include <syslog.h>
 #include <ocli/ocli.h>
 
+#include "man.h"
+
 /*
  * exec external commands
  */
@@ -74,39 +76,30 @@ exec_system_cmd(char *cmd)
 }
 
 /*
- * Extract the brief description text from system man output.
- *   E.g. "man ls" outputs "ls - list directory contents",
- *   then "list directory contents" will be returned.
+ * Get man description line from auto generated man[] array in man.h
  */
 char *
 get_man_desc(char *cmd, char *desc, int len)
 {
-	FILE	*fp;
-	char	buf[256], pfx[64];
-	char	*ptr = NULL, *text = NULL;
-	int	num = 0;
+	struct man *ptr;
+	int	n = 0;
 
 	if (!cmd || !cmd[0] || !desc || len < 8) return NULL;
+	if ((n = (sizeof(man) / sizeof(struct man))) < 2) return NULL;
 
 	bzero(desc, len);
-	snprintf(buf, sizeof(buf), "man %s 2>/dev/null", cmd);
-	snprintf(pfx, sizeof(pfx), "%s -", cmd);
+	ptr = &man[0];
 
-	if ((fp = popen(buf, "r")) == NULL)
-		return NULL;
-
-	while (num++ < 10 && fgets(buf, sizeof(buf), fp)) {
-		if (!(ptr = strstr(buf, pfx)))
-			continue;
-		ptr += strlen(pfx);
-		while (*ptr && isspace(*ptr)) ptr++;
-		if (*ptr && (text = strtok(ptr, "\r\n"))) {
-			snprintf(desc, len, "%s", text);
-			desc[0] = toupper(desc[0]);
+	while (ptr->cmd && ptr->cmd[0] && n > 0) {
+		if (strcmp(cmd, ptr->cmd) == 0) {
+			if (ptr->desc && ptr->desc[0]) {
+				snprintf(desc, len, "%s", ptr->desc);
+				desc[0] = toupper(desc[0]);
+			}
 			break;
 		}
+		ptr++; n--;
 	}
-	pclose(fp);
 	return ((desc[0]) ? desc : NULL);
 }
 
@@ -140,7 +133,7 @@ get_abs_dir(char *path, char *abs_dir, int len)
 
 	if (!getcwd(abs_dir, len)) return NULL;
 
-	/* getcwd does not append tailing '/', but wee need trailing '/'
+	/* getcwd does not append tailing '/', but we need trailing '/'
 	 * for acurate dir prefix match
 	 */
 	if (strlen(abs_dir) < len - 1) {
