@@ -16,17 +16,19 @@ Key steps required to deploy JSH:
 Then after logging in the user will enter a jailed shell environment, only those commands listed in the configuration file can be accessed.
 
 
-## Build and install:
+## Build and install
 ```sh
 make
 make install
 ```
 
-## Edit group or user configuration.
+## Edit group or user configuration
 
 For example user belongs the group "jailed", then the coresponding configuration file will be "/usr/local/etc/jsh.d/group.jailed.conf".
 We only allow users of jailed group to excecute comands: id, pwd, ls, vim, ssh, crontab -e .
 We also allow users of jailed group to use scp to upload/download file in HOME directory, or /home/public .
+The jsh will try to load the group configuration file, and then try to load the user configuration file, the purpose of this is to minimize the configurations. If additional commands are needed for individual users in the group, such as the “admin”, then go to configure /usr/local/etc/jsh.d/user.admin.conf and add other commands as needed. See the last section for configuration file descriptions.
+
 ```sh
 # Allow acp, and acces extra /home/public besides HOME.
 env SCPEXEC=1
@@ -86,3 +88,6 @@ SYNOPSIS
         crontab -e
 ```
 
+## Configuration file
+
+//TODO
