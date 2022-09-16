@@ -55,7 +55,7 @@ crontab -e
 For example, change the group of user "jailuser" to "jailed"，and change login shell to "/usr/local/bin/jsh":
 > If you use usermod to change login shell，you should add /usr/local/bin/jsh into /etc/shells first.
 ```
-usermod -g example -s /usr/local/bin/jsh jailuser
+usermod -g jailed -s /usr/local/bin/jsh jailuser
 ```
 After that, when jailuser ssh logs in and enters jsh environment. 
 The jsh is Cisco-like, typing ? will get command or lexical help, typing TAB will get keyword or path auto completed.
