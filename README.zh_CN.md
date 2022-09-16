@@ -8,7 +8,7 @@ JSH 一个简单的 Jailed Shell 工具，部署 JSH 并不需要复杂的 docke
 - 这些用户不是高级 Linux 管理员，不需要管道过滤、grep 这些相对复杂的操作
 
 部署 JSH 需要的步骤：
-1. 编译和安装 jsh ，注意 jsh 依赖 libocli，需要先编译安装 libocli
+1. 编译和安装 jsh ，注意 jsh 依赖 [libocli](../libocli)，需要先编译安装 libocli
 2. 然后编辑用户组或用户的命令配置文件
 3. 编辑 /etc/passwd，或者 usermod -s .. -g .. 改变用户的 shell 和 group
 
