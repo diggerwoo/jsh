@@ -77,14 +77,22 @@ cmd_cd(cmd_arg_t *cmd_arg, int do_flag)
 			path = value;
 	}
 
-	if (path) {
-		if (chdir(path) == 0)
-			jsh_set_prompt();
-		else
-			fprintf(stderr, "Failed to chdir '%s': %s\n",
-				path, strerror(errno));
-	}
+	if ((!path && !(path = getenv("HOME"))) || !*path)
+		return -1;
 
+	if (chdir(path) == 0)
+		jsh_set_prompt();
+	else
+		fprintf(stderr, "Failed to chdir '%s': %s\n",
+			path, strerror(errno));
+
+	return 0;
+}
+
+static int
+cmd_version(cmd_arg_t *cmd_arg, int do_flag)
+{
+	printf("%s\n", _JSH_VERSION_);
 	return 0;
 }
 
@@ -271,8 +279,11 @@ jsh_init()
 
 	create_cmd(&cmd_tree, "cd", "Change directory", cmd_cd);
 	add_cmd_var(cmd_tree, "PATH", "Directory", LEX_PATH, ARG(PATH));
-	add_cmd_easily(cmd_tree, "cd PATH", BASIC_VIEW, DO_FLAG);
+	add_cmd_easily(cmd_tree, "cd [ PATH ]", BASIC_VIEW, DO_FLAG);
 	set_cmd_arg_helper(cmd_tree, ARG(PATH), dir_helper);
+
+	create_cmd(&cmd_tree, "version", "Display jsh version", cmd_version);
+	add_cmd_easily(cmd_tree, "version", BASIC_VIEW, DO_FLAG);
 
 	grp = getgrgid(getgid());
 	passwd = getpwuid(getuid());
