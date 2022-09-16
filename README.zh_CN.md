@@ -22,8 +22,8 @@ make install
 
 ## 编辑组或用户配置文件
 
-以组 example 为例，编辑 /usr/local/etc/jsh.d/group.example.conf，
-在这个例子里，我们允许 example 组的用户执行 id, pwd, ls, vim, ssh, crontab -e 这几个命令，
+以组 jailed 为例，编辑 /usr/local/etc/jsh.d/group.jailed.conf，
+在这个例子里，我们允许 jailed 组的用户执行 id, pwd, ls, vim, ssh, crontab -e 这几个命令，
 并且允许用户使用 scp 访问自己 HOME 目录，或 /home/public 这个公共目录，做上传下载操作。
 ```sh
 # 允许 scp 传文件，除了 HOME，允许 scp 访问 /home/public
@@ -50,10 +50,10 @@ crontab -e
 
 ## 修改用户的组和 shell 属性
 
-以 jailuser 为例，将用户改变到 example 组，指定 login shell 为 jsh：
+以 jailuser 为例，将用户改变到 jailed 组，指定 login shell 为 jsh：
 > 注意使用 usermod 前，需要将 /usr/local/bin/jsh 加入到 /etc/shells
 ```
-usermod -g example -s /usr/local/bin/jsh jailuser
+usermod -g jailed -s /usr/local/bin/jsh jailuser
 ```
 
 之后用户 jailuser ssh 登录后就进入到 jsh，jsh 使用风格是 Cisco-like 的，敲 ? 就提示了可访问的命令或词法帮助，TAB 关键字补齐，man 可以查看简单语法：
