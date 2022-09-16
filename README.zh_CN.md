@@ -25,6 +25,10 @@ make install
 以组 jailed 为例，编辑 /usr/local/etc/jsh.d/group.jailed.conf，
 在这个例子里，我们允许 jailed 组的用户执行 id, pwd, ls, vim, ssh, crontab -e 这几个命令，
 并且允许用户使用 scp 访问自己 HOME 目录，或 /home/public 这个公共目录，做上传下载操作。
+jsh 配置是以组文件优先的，先尝试加载组配置文件，再尝试加载用户配置文件，这样做的目的是尽量减少配置。
+如果对于组内的个别用户需要额外的命令，比如 admin 用户，那么再去配置 /usr/local/etc/jsh.d/group.jailed.conf，增加所需要的其它命令。
+配置文件说明见最后一节。
+
 ```sh
 # 允许 scp 传文件，除了 HOME，允许 scp 访问 /home/public
 env SCPEXEC=1
@@ -82,3 +86,7 @@ NAME
 SYNOPSIS
         crontab -e
 ```
+
+## 配置文件说明
+
+//TODO
