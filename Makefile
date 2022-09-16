@@ -17,6 +17,9 @@ default: jsh
 
 OBJS =	$(SRC)/jsh.o $(SRC)/utils.o $(SRC)/mylex.o
 
+man.h:
+	$(SRC)/grabman.py > $(SRC)/man.h
+
 jsh: $(OBJS)
 	$(CC) -o $@ $^ /usr/local/lib/libocli.a -lpcre -lreadline
 
