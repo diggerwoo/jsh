@@ -103,16 +103,47 @@ alias ls "ls -a"
 ```
 The “vi” and “vim” has been aliased as "vim -Z" by jsh, to avoid user executing external Linux commands inside vim.
 
-### 4.3 Add command syntax
-//TODO
+### 4.3 Add permitted command syntaxes
 
-### 4.4 Lexical types
+Configure each permitted command as a syntax line in the configuration file. Precautions:
+- The first keyword of each command syntax coresponds to a existing excetuable file. For example, "history" is a bash internal command keyword, there is no executable "history" present in any bin or sbin directory, so adding a "history" line is invalid.
+- "cd", "exit" are jsh builtin commands and do not need to be added repeatedly.
+- Use lowercase words as command keywords (Linux commands are all lowercase). Uppercase words are usually used to express lexical keywords. If the uppercase word does not match any lexical types, it is considered a keyword. Refer to [Section 4.4](#44-lexical-types-of-jsh) for more details about jsh lexical types.
+- The command syntaxes in the group configuration file do not need to be added repeatedly in the user configuration file. That is, only the extra command syntax required by the user should be configured in the user file.
+- The parameter formats and sequences specified in the syntax need to match the requirements of the actual commands, otherwise error will occur during execution.
 
-Commonly used lexical types are as follows.
+Below example allows user to make new directory and update self cron jobs.
+```
+mkdir PATH
+crontab -e 
+```
+
+Special syntax charactors **[ ] { | }** are allowed for option or alternatives in the syntax line.
+- **Alternative** segment **{ | }**  , allows two of more tokens separated by '**|**' . E.g. " { block | pass } "，" { tcp | udp | icmp } "
+- **Optional** segment **[  ]**, each segment can have multiple tokens. E.g. " [ -c COUNT ] [ -s PKT_SIZE ] "
+
+Usage limitaions of syntax charactors:
+- SPACE must be present between reserved chars, or between reserved char and other tokens.
+- NO **[ ]** or **{ }** are allowed to be nested inside **{ }**.
+- **{ }** can be nested inside **[ ]**. E.g.  " [ from { IP_ADDR | IFNAME } ] "
+
+Below example allows user to ping IP or domain name, and to use -c option to choose the number of ICMP packets amonng 5, 10, and 100.
+```
+ping [ -c { 5 | 10 | 100 } ] { IP_ADDR | DOMAIN_NAME }
+```
+
+Another example permits user to ssh only two sites, including to 192.168.1.1 as admin, and to 192.168.1.3 as guest.
+```
+ssh { admin@192.168.1.1 | guest@192.168.1.3 }
+```
+
+### 4.4 Lexical types of jsh
+
+Commonly used lexical keywords are as follows.
 | Lexical Keyword | Description |
 | :--- | :--- |
-| PATH | PATH of directory of file, suports TAB auto completion |
-| WORDS | Any string, supports SPACE in double quotation, like "test 123" |
+| PATH | PATH of directory or file, supports TAB auto completion |
+| WORDS | Any string, supports SPACEs in double quotation, like "test 123" |
 | WORD | Word starts with alphabet |
 | UID | User ID composed by alphabets, digits, '_' and '.' |
 | DOMAIN_NAME | Domain name |
