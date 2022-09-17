@@ -60,12 +60,47 @@ For example, change the group of user "jailuser" to "jailed"，and change login 
 ```
 usermod -g jailed -s /usr/local/bin/jsh jailuser
 ```
-After that, when jailuser ssh logs in and enters jsh environment like blow. 
-The jsh is Cisco-like, typing ? will get command or lexical help, typing TAB will get keyword or path auto completed.
+After that, when jailuser ssh logs in the shell environment will like blow. 
+The usage of jsh is Cisco-like, typing ? will get command or lexical help, typing TAB will get keyword or path auto completed.
 The man command can be used to display brief command syntaxes.
 
  ![image](https://github.com/diggerwoo/blobs/blob/main/img/jsh.gif)
 
 ## 4. Configuration file
+
+### 4.1 Environment variables
+
+The environment definition is quite like Linux's. Note there can be no spaces beside the ‘=’, and no spaces or single/double quotation marks inside <NAME> and <VALUE>:
+```
+env <NAME>=<VALUE>
+```
+For example:
+```
+env LANG=en_US.UTF-8
+```
+
+There is no need to define the PATH. When jsh starts it sets "PATH=/bin:/sbin/:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin" to make sure that it can  find most of common commands of Linux.
+
+There are two customized env vars defined by jsh：  
+ - SCPEXEC: set 1 or TRUE if users/groups are allowed to use scp.
+ - SCPDIR: defines accessible directories other than HOME. Multi directory shoud be separated by ':'.
+
+For example:
+```
+env SCPEXEC=1
+env SCPDIR=/home/public:/var/www
+```
+
+### 4.2 Alias
+
+The keyword alias is define alias of commands. Note that doulbe quotation marks must be used if there are SPACEs inside the expanded command.
+```
+alias <keyword> ”<expanded command>"
+```
+For example:
+```
+alias ls "ls -a"
+```
+The “vi” and “vim” has been aliased as "vim -Z" by jsh, to avoid user executing external Linux commands inside vim.
 
 //TODO
