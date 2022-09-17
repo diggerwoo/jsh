@@ -19,15 +19,17 @@ JSH 一个简单的 Jailed Shell 工具，部署 JSH 并不需要复杂的 docke
 make
 make install
 ```
+上述步骤完成后，可执行文件 jsh 被安装到 /usr/local/bin，一个配置例子文件 group.jailed.conf 被安装到 /usr/local/etc/jsh.d 目录。
 
 ## 编辑组或用户配置文件
 
-以组 jailed 为例，编辑 /usr/local/etc/jsh.d/group.jailed.conf，
-在这个例子里，我们允许 jailed 组的用户执行 id, pwd, ls, vim, ssh, crontab -e 这几个命令，
-并且允许用户使用 scp 访问自己 HOME 目录，或 /home/public 这个公共目录，做上传下载操作。
-jsh 配置是以组文件优先的，先尝试加载组配置文件，再尝试加载用户配置文件，这样做的目的是尽量减少配置。
-如果对于组内的个别用户需要额外的命令，比如 admin 用户，那么再去配置 /usr/local/etc/jsh.d/user.admin.conf，增加所需要的其它命令。
+假设用户属于组 "jailed" ，那么用户对应的组配置文件就是 /usr/local/etc/jsh.d/group.jailed.conf。
+jsh 配置设计为以组文件优先，即先尝试加载组配置文件，再尝试加载用户配置文件，这样做的目的是尽量减少配置。
+如果对于组内的个别用户需要额外的命令，比如 admin 用户，那么再去配置 /usr/local/etc/jsh.d/user.admin.conf，增加 admin 所需要的其它命令。
 配置文件说明见最后一节。
+在 [group.jailed.conf](conf/group.jailed.conf) 这个例子里，我们允许 jailed 组用户：
+- 执行 id, pwd, ls, vim, ping, ssh, crontab -e 这几个命令.
+- 使用 scp 访问自己 HOME 目录，以及 /home/public 这个公共目录，做上传下载。
 
 ```sh
 # 允许 scp 传文件，除了 HOME，允许 scp 访问 /home/public
@@ -37,18 +39,16 @@ env SCPDIR=/home/public
 # ls 别名
 alias ls "ls -a"
 
+# 允许的命令语法
 id
 pwd
 ls -l [ PATH ]
 ls [ PATH ]
-
-# 允许vi
+mkdir PATH
+rm [ -rf ] PATH
 vim [ PATH ]
-
-# 允许 ssh 
+ping [ -c INT ] { IP_ADDR | DOMAIN_NAME }
 ssh NET_UID
-
-# 允许修改自己的 crontab
 crontab -e
 ```
 
