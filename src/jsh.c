@@ -216,9 +216,11 @@ reg_jsh_cmd(char *syntax)
 	/* Add each key or var symbol */
 	for (i = 1; i < argc; i++) {
 		if (arg_type[i] >= 0) {
-			add_cmd_var(ct, argv[i], NULL, arg_type[i], ARG(PATH));
-			if (arg_type[i] == LEX_PATH)
+			if (arg_type[i] == LEX_PATH) {
+				add_cmd_var(ct, argv[i], NULL, arg_type[i], ARG(PATH));
 				has_path++;
+			} else
+				add_cmd_var(ct, argv[i], NULL, arg_type[i], argv[i]);
 		} else {
 			add_cmd_key_arg(ct, argv[i], NULL, ARG(OPT));
 		}
