@@ -146,6 +146,7 @@ Commonly used lexical types are as follows.
 | WORDS | Any string, supports SPACEs in double quotation, like "test 123" |
 | WORD | Word starts with alphabet |
 | UID | User ID composed by alphabets, digits, '_' and '.' |
+| NET_UID | UID@DOMAIN_NAME or UID@IP_ADDR |
 | DOMAIN_NAME | Domain name |
 | HOST_NAME | Hostname or domain name|
 | IP_ADDR | IPv4 address |
