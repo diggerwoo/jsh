@@ -144,6 +144,7 @@ ssh { admin@192.168.1.1 | guest@192.168.1.3 }
 | WORDS | 字符串格式，可双引号包含内含空格，比如 "test 123" |
 | WORD | 字母开始的单词 |
 | UID | 含字母数字_.的用户名或用户ID |
+| NET_UID | UID@域名 或 UID@IPv4地址 |
 | DOMAIN_NAME | 域名 |
 | HOST_NAME | 主机名或域名 |
 | IP_ADDR | IPv4 地址 |
