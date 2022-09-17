@@ -106,7 +106,7 @@ The “vi” and “vim” has been aliased as "vim -Z" by jsh, to avoid user ex
 ### 4.3 Add permitted command syntaxes
 
 Configure each permitted command as a syntax line in the configuration file. Precautions:
-- The first keyword of each command syntax coresponds to a existing excetuable file. For example, "history" is a bash internal command keyword, there is no executable "history" present in any bin or sbin directory, so adding a "history" line is invalid.
+- The first keyword of each command syntax must coresponds to an existing excetuable file. For example, "history" is a bash internal command keyword, there is no executable "history" present in any bin or sbin directory, so adding a "history" syntax line is invalid.
 - "cd", "exit" are jsh builtin commands and do not need to be added repeatedly.
 - Use lowercase words as command keywords (Linux commands are all lowercase). Uppercase words are usually used to express lexical keywords. If the uppercase word does not match any lexical types, it is considered a keyword. Refer to [Section 4.4](#44-lexical-types-of-jsh) for more details about jsh lexical types.
 - The command syntaxes in the group configuration file do not need to be added repeatedly in the user configuration file. That is, only the extra command syntax required by the user should be configured in the user file.
@@ -139,8 +139,8 @@ ssh { admin@192.168.1.1 | guest@192.168.1.3 }
 
 ### 4.4 Lexical types of jsh
 
-Commonly used lexical keywords are as follows.
-| Lexical Keyword | Description |
+Commonly used lexical types are as follows.
+| Lexical Type | Description |
 | :--- | :--- |
 | PATH | PATH of directory or file, supports TAB auto completion |
 | WORDS | Any string, supports SPACEs in double quotation, like "test 123" |
@@ -154,8 +154,8 @@ Commonly used lexical keywords are as follows.
 | HTTPS_URL | HTTPS URL |
 
 
-Commonly used lexical types are as follows.
-| Lexical Keyword | Description |
+Other infrequently used lexical types are as follows.
+| Lexical Type | Description |
 | :--- | :--- |
 | HEX | Hexidecimal |
 | IP_MASK | IPv4 mask |
