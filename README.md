@@ -16,14 +16,14 @@ Key steps required to deploy JSH:
 Then after logging in the user will enter a jailed shell environment, only those commands listed in the configuration file can be accessed.
 
 
-## Build and install
+## 1. Build and install
 ```sh
 make
 make install
 ```
 After making process, the jsh will be installed into /usr/local/bin, and a sample group.jailed.conf will be installed into /usr/local/etc/jsh.d directory. 
 
-## Edit group or user configuration
+## 2. Edit group or user configuration
 
 For example a user belongs the group "jailed", then the coresponding configuration file of the group "jailed" will be "/usr/local/etc/jsh.d/group.jailed.conf".
 The jsh will try to load the group configuration first, and then try to load the user specific configuration. The purpose of this is to minimize the configurations. If additional commands are needed for individual users in the group, such as the “admin”, then go to configure /usr/local/etc/jsh.d/user.admin.conf and add other commands. See the last section for configuration file descriptions.
@@ -53,7 +53,7 @@ ssh NET_UID
 crontab -e
 ```
 
-## Change user shell and group
+## 3. Change user shell and group
 
 For example, change the group of user "jailuser" to "jailed"，and change login shell to "/usr/local/bin/jsh":
 > If you use usermod to change login shell，you should add /usr/local/bin/jsh into /etc/shells first.
@@ -66,6 +66,6 @@ The man command can be used to display brief command syntaxes.
 
  ![image](https://github.com/diggerwoo/blobs/blob/main/img/jsh.gif)
 
-## Configuration file
+## 4. Configuration file
 
 //TODO
