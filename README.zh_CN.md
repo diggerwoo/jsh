@@ -14,14 +14,14 @@ JSH 一个简单的 Jailed Shell 工具，部署 JSH 并不需要复杂的 docke
 
 然后用户登录后就进入到一个限定命令范围的 shell 环境了，所能访问的命令就是上面第二步配置文件里所指定的。
 
-## 编译安装
+## 1. 编译安装
 ```sh
 make
 make install
 ```
 上述步骤完成后，可执行文件 jsh 被安装到 /usr/local/bin，一个配置例子文件 group.jailed.conf 被安装到 /usr/local/etc/jsh.d 目录。
 
-## 编辑组或用户配置文件
+## 2. 编辑组或用户配置文件
 
 假设用户属于组 "jailed" ，那么用户对应的组配置文件就是 /usr/local/etc/jsh.d/group.jailed.conf。
 jsh 配置设计为以组文件优先，即先尝试加载组配置文件，再尝试加载用户配置文件，这样做的目的是尽量减少配置。
@@ -52,7 +52,7 @@ ssh NET_UID
 crontab -e
 ```
 
-## 修改用户的组和 shell 属性
+## 3. 修改用户的组和 shell 属性
 
 以 jailuser 为例，将用户改变到 jailed 组，指定 login shell 为 jsh：
 > 注意使用 usermod 前，需要将 /usr/local/bin/jsh 加入到 /etc/shells
@@ -60,33 +60,10 @@ crontab -e
 usermod -g jailed -s /usr/local/bin/jsh jailuser
 ```
 
-之后用户 jailuser ssh 登录后就进入到 jsh，jsh 使用风格是 Cisco-like 的，敲 ? 就提示了可访问的命令或词法帮助，TAB 关键字补齐，man 可以查看简单语法：
+之后 jailuser 用户 ssh 或 console 登录后就进入到 jsh 效果如下，jsh 使用风格是 Cisco-like 的，敲 ? 就提示了可访问的命令或词法帮助，TAB 关键字或 PATH 补齐，man 可以查看简单语法：
 
-```
-[centos71 jailuser]>
-  cat                    - Concatenate files and print on the standard output
-  cd                     - Change directory
-  crontab                - Maintains crontab files for individual users
-  exit                   - Exit jsh
-  id                     - Print real and effective user and group IDs
-  ls                     - List directory contents
-  man                    - Display manual text
-  pwd                    - Print name of current/working directory
-  ssh                    - OpenSSH SSH client (remote login program)
-  vim                    - Vi IMproved, a programmers text editor
-[centos71 jailuser]>
-[centos71 jailuser]> man ssh
-NAME
-        ssh - - OpenSSH SSH client (remote login program)
-SYNOPSIS
-        ssh NET_UID
-[centos71 jailuser]> man crontab
-NAME
-        crontab - Maintains crontab files for individual users
-SYNOPSIS
-        crontab -e
-```
+ ![image](https://github.com/diggerwoo/blobs/blob/main/img/jsh.gif)
 
-## 配置文件说明
+## 4. 配置文件说明
 
 //TODO
