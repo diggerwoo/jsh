@@ -4,8 +4,8 @@
 JSH 一个简单的 Jailed Shell 工具，部署 JSH 并不需要复杂的 docker 或 chroot 配置，只需要一个可执行 shell 文件，以及一个或若干简单的配置文件。
 
 如果应用场景如下，那么 JSH 可能是适合你的：
-- 需要限定某一组或某个用户，只能访问有限的 Linux 命令，比如只能 crontab -e，只能 ssh 到限定范围的主机
-- 这些用户不是高级 Linux 管理员，不需要管道过滤、grep 这些相对复杂的操作
+- 需要限定某一组或某个用户，只能访问有限的 Linux 命令甚至命令选项，比如只能 crontab -e，只能 ssh 到某几台主机
+- 这些用户不是高级 Linux 用户，不需要管道过滤、grep 这些相对复杂的操作
 
 部署 JSH 需要的步骤：
 1. 编译和安装 jsh ，注意 jsh 依赖 [libocli](https://github.com/diggerwoo/libocli)，需要先编译安装 libocli
@@ -60,7 +60,7 @@ crontab -e
 usermod -g jailed -s /usr/local/bin/jsh jailuser
 ```
 
-之后 jailuser 用户 ssh 或 console 登录后就进入到 jsh 效果如下，jsh 使用风格是 Cisco-like 的，敲 ? 就提示了可访问的命令或词法帮助，TAB 关键字或 PATH 补齐，man 可以查看简单语法：
+之后 jailuser 用户 ssh 或 console 登录后就进入到 jsh 效果如下，jsh 的使用是类似 Cisco 庚哥，敲 ? 提示可访问的命令或词法帮助，敲 TAB 自动比起关键字或 PATH，内置的 man 命令可以查看简单语法：
 
  ![image](https://github.com/diggerwoo/blobs/blob/main/img/jsh.gif)
 
