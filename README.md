@@ -64,7 +64,7 @@ After that, when jailuser ssh logs in and enters jsh environment like blow.
 The jsh is Cisco-like, typing ? will get command or lexical help, typing TAB will get keyword or path auto completed.
 The man command can be used to display brief command syntaxes.
 
-![image](https://github.com/diggerwoo/blobs/blob/main/img/jsh.gif）
+ ![image](https://github.com/diggerwoo/blobs/blob/main/img/jsh.gif)
 
 ## Configuration file
 
