@@ -78,9 +78,9 @@ env <NAME>=<VALUE>
 env LANG=en_US.UTF-8
 ```
 
-不需要再定义 PATH 变量，jsh 启动时会已经设置了 PATH=/bin:/sbin/:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin ，可确保查找到大多数 Linux 常用命令。
+不需要再定义 PATH 变量，jsh 启动时会自动设置 PATH=/bin:/sbin/:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin ，可确保查找到大多数 Linux 常用命令。
 
-jsh 自定义的两个与 scp 相关的两个环境变量：  
+jsh 自定义了两个与 scp 相关的两个环境变量：  
  - SCPEXEC 设置为 1 或 TRUE 时，允许用户使用 scp 传文件
  - SCPDIR  设置用户除了 HOME 目录之外可访问的目录，用冒号可隔离多个目录
 比如：  
@@ -91,7 +91,7 @@ env SCPDIR=/home/public:/var/www
 
 ### 4.2 命令的别名
 
-使用 alias 关键字定义命令别名，注意展开命令中有空格时，使用双引号包含：  
+使用 alias 关键字定义命令别名，注意展开命令中有空格时，应使用双引号包含整个展开命令串：  
 ```
 alias <首关键字> ”<展开的命令>"
 ```
@@ -99,7 +99,7 @@ alias <首关键字> ”<展开的命令>"
 ```
 alias ls "ls -a"
 ```
-jsh 内部已经将 vi 和 vim 设置别名 "vim -Z"，即用户使用 vim 时不允许执行外部命令。
+jsh 内部已经将 vi 和 vim 设置别名 "vim -Z"，即用户使用 vim 时不允许使用 :! 执行外部命令。
 
 ### 4.3 增加可执行的命令语法
 
