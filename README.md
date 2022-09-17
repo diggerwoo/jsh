@@ -60,34 +60,11 @@ For example, change the group of user "jailuser" to "jailed"，and change login 
 ```
 usermod -g jailed -s /usr/local/bin/jsh jailuser
 ```
-After that, when jailuser ssh logs in and enters jsh environment. 
+After that, when jailuser ssh logs in and enters jsh environment like blow. 
 The jsh is Cisco-like, typing ? will get command or lexical help, typing TAB will get keyword or path auto completed.
 The man command can be used to display brief command syntaxes.
 
-```
-[centos71 jailuser]>
-  cat                    - Concatenate files and print on the standard output
-  cd                     - Change directory
-  crontab                - Maintains crontab files for individual users
-  exit                   - Exit jsh
-  id                     - Print real and effective user and group IDs
-  ls                     - List directory contents
-  man                    - Display manual text
-  pwd                    - Print name of current/working directory
-  ssh                    - OpenSSH SSH client (remote login program)
-  vim                    - Vi IMproved, a programmers text editor
-[centos71 jailuser]>
-[centos71 jailuser]> man ssh
-NAME
-        ssh - - OpenSSH SSH client (remote login program)
-SYNOPSIS
-        ssh NET_UID
-[centos71 jailuser]> man crontab
-NAME
-        crontab - Maintains crontab files for individual users
-SYNOPSIS
-        crontab -e
-```
+![image](https://github.com/diggerwoo/blobs/blob/main/img/jsh.gif）
 
 ## Configuration file
 
