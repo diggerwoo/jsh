@@ -5,7 +5,7 @@ JSH is a simple Jailed Shell tool.
 The Deployment of JSH is easy and does not require complicated docker or chroot, only an executable jsh and simple configuration files will be needed.
 
 If the application scenario is as follows, then JSH may be suitable for you:
-- Need to limit a certain groups or certain users to only access limited Linux commands. E.g. crontab -e, ssh to a limited range of hosts.
+- Need to limit certain groups or certain users to only access limited Linux commands. E.g. crontab -e, ssh to a limited range of hosts.
 - These users are not advanced Linux administrators and do not need operations such as pipe filtering, grep.
 
 Key steps required to deploy JSH:
@@ -21,34 +21,35 @@ Then after logging in the user will enter a jailed shell environment, only those
 make
 make install
 ```
+After making process, the jsh will be installed into /usr/local/bin, and a sample group.jailed.conf will be installed into /usr/local/etc/jsh.d directory. 
 
 ## Edit group or user configuration
 
-For example user belongs the group "jailed", then the coresponding configuration file will be "/usr/local/etc/jsh.d/group.jailed.conf".
-We only allow users of jailed group to excecute comands: id, pwd, ls, vim, ssh, crontab -e .
-We also allow users of jailed group to use scp to upload/download file in HOME directory, or /home/public .
-The jsh will try to load the group configuration first, and then try to load the user configuration. The purpose of this is to minimize the configurations. If additional commands are needed for individual users in the group, such as the “admin”, then go to configure /usr/local/etc/jsh.d/user.admin.conf and add other commands. See the last section for configuration file descriptions.
+For example a user belongs the group "jailed", then the coresponding configuration file of the group "jailed" will be "/usr/local/etc/jsh.d/group.jailed.conf".
+The jsh will try to load the group configuration first, and then try to load the user specific configuration. The purpose of this is to minimize the configurations. If additional commands are needed for individual users in the group, such as the “admin”, then go to configure /usr/local/etc/jsh.d/user.admin.conf and add other commands. See the last section for configuration file descriptions.
+
+In the sample configuration [group.jailed.conf](conf/group.jailed.conf), we allow users of jailed group to:
+- excecute limited comands: id, pwd, ls, mkdir, rm. vim, ping, ssh, crontab -e .
+- use scp to upload/download file in self HOME and extra /home/public directory.
 
 ```sh
 # Allow acp, and acces extra /home/public besides HOME.
 env SCPEXEC=1
 env SCPDIR=/home/public
 
-# ls alias
+# Alias settings
 alias ls "ls -a"
 
+# Allowed commands
 id
 pwd
 ls -l [ PATH ]
 ls [ PATH ]
-
-# Allow vim.
+mkdir PATH
+rm [ -rf ] PATH
 vim [ PATH ]
-
-# Allow ssh.
+ping [ -c INT ] { IP_ADDR | DOMAIN_NAME }
 ssh NET_UID
-
-# Allow edit self crontab
 crontab -e
 ```
 
