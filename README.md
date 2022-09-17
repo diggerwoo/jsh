@@ -81,9 +81,9 @@ env LANG=en_US.UTF-8
 
 There is no need to define the PATH. When jsh starts it sets "PATH=/bin:/sbin/:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin" to make sure that it can  find most of common commands of Linux.
 
-There are two customized env vars defined by jsh：  
- - SCPEXEC: set 1 or TRUE if users/groups are allowed to use scp.
- - SCPDIR: defines accessible directories other than HOME. Multi directory shoud be separated by ':'.
+There are two internal env vars defined by jsh：  
+ - SCPEXEC, set 1 or TRUE if users/groups are allowed to use scp.
+ - SCPDIR, defines accessible directories other than HOME. Multi directory shoud be separated by ':'.
 
 For example:
 ```
@@ -93,7 +93,7 @@ env SCPDIR=/home/public:/var/www
 
 ### 4.2 Alias
 
-The keyword alias is define alias of commands. Note that doulbe quotation marks must be used if there are SPACEs inside the expanded command.
+The keyword "alias" is used to define alias of commands. Note that double quotation marks must be used if there are SPACEs inside the expanded command.
 ```
 alias <keyword> ”<expanded command>"
 ```
