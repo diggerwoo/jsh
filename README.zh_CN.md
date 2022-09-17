@@ -26,7 +26,7 @@ make install
 假设用户属于组 "jailed" ，那么用户对应的组配置文件就是 /usr/local/etc/jsh.d/group.jailed.conf。
 jsh 配置设计为以组文件优先，即先尝试加载组配置文件，再尝试加载用户配置文件，这样做的目的是尽量减少配置。
 如果对于组内的个别用户需要额外的命令，比如 admin 用户，那么再去配置 /usr/local/etc/jsh.d/user.admin.conf，增加 admin 所需要的其它命令。
-配置文件说明见 [4.4 保留的词法关键字](#44-保留的词法关键字)。
+配置文件说明详见 [第 4 节](#4-配置文件说明)。
 
 在 [group.jailed.conf](conf/group.jailed.conf) 这个例子里，我们允许 jailed 组用户：
 - 执行 id, pwd, ls, vim, ping, ssh, crontab -e 这几个命令.
@@ -78,7 +78,7 @@ env <NAME>=<VALUE>
 env LANG=en_US.UTF-8
 ```
 
-一般来说不需要定义 PATH 变量，jsh 启动时会已经设置了 PATH=/bin:/sbin/:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin ，可确保保证查找到大多数 Linux 自带的常用命令。
+不需要再定义 PATH 变量，jsh 启动时会已经设置了 PATH=/bin:/sbin/:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin ，可确保查找到大多数 Linux 常用命令。
 
 jsh 自定义的两个与 scp 相关的两个环境变量：  
  - SCPEXEC 设置为 1 或 TRUE 时，允许用户使用 scp 传文件
