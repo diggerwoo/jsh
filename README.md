@@ -26,7 +26,7 @@ After making process, the jsh will be installed into /usr/local/bin, and a sampl
 ## 2. Edit group or user configuration
 
 For example a user belongs the group "jailed", then the coresponding configuration file of the group "jailed" will be "/usr/local/etc/jsh.d/group.jailed.conf".
-The jsh will try to load the group configuration first, and then try to load the user specific configuration. The purpose of this is to minimize the configurations. If additional commands are needed for individual users in the group, such as the “admin”, then go to configure /usr/local/etc/jsh.d/user.admin.conf and add other commands. See the last section for configuration file descriptions.
+The jsh will try to load the group configuration first, and then try to load the user specific configuration. The purpose of this is to minimize the configurations. If additional commands are needed for individual users in the group, such as the “admin”, then go to configure /usr/local/etc/jsh.d/user.admin.conf and add other commands. See the [section 4](#4-Configuration-file) for detailed description of configuration file.
 
 In the sample configuration [group.jailed.conf](conf/group.jailed.conf), we allow users of jailed group to:
 - excecute limited comands: id, pwd, ls, mkdir, rm. vim, ping, ssh, crontab -e .
@@ -103,4 +103,40 @@ alias ls "ls -a"
 ```
 The “vi” and “vim” has been aliased as "vim -Z" by jsh, to avoid user executing external Linux commands inside vim.
 
+### 4.3 Add command syntax
 //TODO
+
+### 4.4 Lexical types
+
+Commonly used lexical types are as follows.
+| Lexical Keyword | Description |
+| :--- | :--- |
+| PATH | PATH of directory of file, suports TAB auto completion |
+| WORDS | Any string, supports SPACE in double quotation, like "test 123" |
+| WORD | Word starts with alphabet |
+| UID | User ID composed by alphabets, digits, '_' and '.' |
+| DOMAIN_NAME | Domain name |
+| HOST_NAME | Hostname or domain name|
+| IP_ADDR | IPv4 address |
+| INT | Integer |
+| HTTP_URL | HTTP URL |
+| HTTPS_URL | HTTPS URL |
+
+
+Commonly used lexical types are as follows.
+| Lexical Keyword | Description |
+| :--- | :--- |
+| HEX | Hexidecimal |
+| IP_MASK | IPv4 mask |
+| IP_PREFIX | IPv4Addr/<0-32> |
+| IP_BLOCK | IPv4Addr[/<0-32>] |
+| IP_RANGE | IPAddr1[-IPAddr2] |
+| IP6_ADDR | IPv6Addr |
+| IP6_PREFIX | IPv6Addr/<0-128> |
+| IP6_BLOCK | IPv6Addr[/<0-128>] |
+| PORT | <0-65535> TCP/UDP Port |
+| PORT_RANGE | Port1[-Port2] |
+| VLAN_ID | <1-4094> VLAN ID |
+| MAC_ADDR | MAC address |
+| EMAIL_ADDR | EMail address |
+
