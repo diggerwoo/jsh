@@ -61,7 +61,7 @@ crontab -e
 usermod -g jailed -s /usr/local/bin/jsh jailuser
 ```
 
-之后 jailuser 用户 ssh 或 console 登录后就进入到 jsh 效果如下，jsh 的使用是类似 Cisco 风格的，敲 ? 提示可访问的命令或词法帮助，敲 TAB 自动比起关键字或 PATH，内置的 man 命令可以查看简单语法：
+之后 jailuser 用户 ssh 或 console 登录后就进入到 jsh 效果如下，jsh 的使用是类似 Cisco 风格的，敲 ? 提示可访问的命令或词法帮助，敲 TAB 自动补齐关键字或 PATH，内置的 man 命令可以查看简单语法：
 
  ![image](https://github.com/diggerwoo/blobs/blob/main/img/jsh.gif)
 
