@@ -108,8 +108,8 @@ The “vi” and “vim” has been aliased as "vim -Z" by jsh, to avoid user ex
 ### 4.3 Add permitted command syntaxes
 
 Configure each permitted command as a syntax line in the configuration file. Precautions:
-- The first keyword of each command syntax must coresponds to an existing excetuable file (except for alias). For example, "history" is a bash internal command, but there is no executable "history" present in any bin or sbin directory, so adding a "history" syntax line is invalid.
-- "cd", "exit" are jsh builtin commands and do not need to be added repeatedly.
+- The first keyword of each command syntax must coresponds to an existing excetuable file (except for alias). For example, "logout" is a bash internal command, but there is no executable "logout" present in any bin or sbin directory, so adding a "logout" syntax line is invalid.
+- "cd", "exit" and "history" are jsh builtin commands and do not need to be added repeatedly.
 - Use lowercase words as command keywords (Linux commands are all lowercase). Uppercase words are usually used for lexical types. If the uppercase word does not match any lexical types, it is considered a command keyword. Refer to [Section 4.4](#44-lexical-types-of-jsh) for more details about jsh lexical types.
 - The command syntaxes in the group configuration do not need to be added repeatedly in the user configuration. That is, only those extra command syntaxes  required by the user should be configured in the user file.
 - The parameters‘ format and sequence specified in the syntax need to meet the requirements of the actual commands, otherwise error will occur during execution.
