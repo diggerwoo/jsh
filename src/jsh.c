@@ -89,6 +89,42 @@ cmd_cd(cmd_arg_t *cmd_arg, int do_flag)
 	return 0;
 }
 
+/*
+ * Callback of history command
+ */
+static int
+cmd_history(cmd_arg_t *cmd_arg, int do_flag)
+{
+	HIST_ENTRY **his_list;
+	int	i, n, len, left;
+	char	*ptr, *buf;
+	#define MAX_HIST_LINE	128
+
+	stifle_history(MAX_HIST_LINE);
+	if (!(his_list = history_list())) return 0;
+
+	len = MAX_HIST_LINE * 256;
+	if (!(buf = malloc(len))) {
+		fprintf(stderr, "history malloc: %s\n", strerror(errno));
+		return -1;
+	}
+	bzero(buf, len);
+	left = len;
+	ptr = buf;
+	for (i = 0; his_list[i]; i++) {
+		if (left - strlen(his_list[i]->line) - 8 < 0) break;
+		ptr += (n = snprintf(ptr, left, "%5d  %s\n", i + 1, his_list[i]->line));
+		left -= n;
+	}
+
+	display_buf_more(buf, ptr - buf);
+	free(buf);
+	return 0;
+}
+
+/*
+ * Callback of version command
+ */
 static int
 cmd_version(cmd_arg_t *cmd_arg, int do_flag)
 {
@@ -130,7 +166,7 @@ cmd_entry(cmd_arg_t *cmd_arg, int do_flag)
 			if (alias && alias[0])
 				value = alias;
 		}
-		if (strlen(value) < left - 2) {
+		if (strlen(value) < left - 3) {
 			if (i != 0 && strchr(value, ' '))
 				ptr += (len = snprintf(ptr, left, "\"%s\" ", value));
 			else
@@ -283,6 +319,9 @@ jsh_init()
 	add_cmd_var(cmd_tree, "PATH", "Directory", LEX_PATH, ARG(PATH));
 	add_cmd_easily(cmd_tree, "cd [ PATH ]", BASIC_VIEW, DO_FLAG);
 	set_cmd_arg_helper(cmd_tree, ARG(PATH), dir_helper);
+
+	create_cmd(&cmd_tree, "history", "Browse history", cmd_history);
+	add_cmd_easily(cmd_tree, "history", BASIC_VIEW, DO_FLAG);
 
 	create_cmd(&cmd_tree, "version", "Display jsh version", cmd_version);
 	add_cmd_easily(cmd_tree, "version", BASIC_VIEW, DO_FLAG);
