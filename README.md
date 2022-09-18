@@ -6,12 +6,12 @@ The Deployment of JSH is easy and does not require complicated docker or chroot,
 
 If the application scenario is as follows, then JSH may be suitable for you:
 - Need to limit certain groups or certain users to only access limited Linux commands. E.g. crontab -e, ssh to a limited range of hosts.
-- These users are not advanced Linux administrators and do not need operations such as pipe filtering, grep.
+- These users are not advanced Linux administrators and do not need operations such as pipe filtering, grep, or the host environment does not need them to do this.
 
 Key steps required to deploy JSH:
 1. Compile and install jsh, note that jsh depends on [libocli](https://github.com/diggerwoo/libocli), you need to compile and install libocli first.
 2. Edit the configuration file for specific group or user, to include all the limited commands.
-3. Edit /etc/passwd, or usermod -s .. -g .. to change the user's shell and group.
+3. Edit /etc/passwd, or usermod -s /usr/local/bin/jsh -g <limited_group> to change the user's shell and group.
 
 Then after logging in the user will enter a jailed shell environment, only those commands listed in the configuration file can be accessed.
 
@@ -25,8 +25,10 @@ After making process, the jsh will be installed into /usr/local/bin, and a sampl
 
 ## 2. Edit group or user configuration
 
-For example a user belongs the group "jailed", then the coresponding configuration file of the group "jailed" will be "/usr/local/etc/jsh.d/group.jailed.conf".
-The jsh will try to load the group configuration first, and then try to load the user specific configuration. The purpose of this is to minimize the configurations. If additional commands are needed for individual users in the group, such as the “admin”, then go to configure /usr/local/etc/jsh.d/user.admin.conf and add other commands. See the [section 4](#4-Configuration-file) for detailed description of configuration file.
+The jsh configuration is deployed under /usr/local/etc/jsh.d. Assuming user "testuser" belongs to group "jailed", then the group configuration file will be group.jailed.conf , while the user file will be group.testuser.conf .
+The jsh will try to load the group configuration first, and then try to load the user specific configuration. 
+If all users in a group have the same control policy, only one group file needs to be configured.
+If additional commands are needed for specific users in the group, such as the “admin”, then go to configure user.admin.conf. See the [section 4](#4-Configuration-file) for detailed description of configuration file.
 
 In the sample configuration [group.jailed.conf](conf/group.jailed.conf), we allow users of jailed group to:
 - excecute limited comands: id, pwd, ls, mkdir, rm. vim, ping, ssh, crontab -e .
@@ -70,7 +72,7 @@ The man command can be used to display brief command syntaxes.
 
 ### 4.1 Environment variables
 
-The environment definition is quite like Linux's. Note there can be no spaces beside the ‘=’, and no spaces or single/double quotation marks inside <NAME> and <VALUE>:
+The keyword "env" is used to define environment which is quite like Linux's. Note there can be no spaces beside the ‘=’, and no spaces or single/double quotation marks inside <NAME> and <VALUE>:
 ```
 env <NAME>=<VALUE>
 ```
@@ -79,7 +81,7 @@ For example:
 env LANG=en_US.UTF-8
 ```
 
-There is no need to define the PATH. When jsh starts it sets "PATH=/bin:/sbin/:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin" to make sure that it can  find most of common commands of Linux.
+There is no need to define the env PATH. When jsh starts it sets "PATH=/bin:/sbin/:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin" to make sure that it can find most of common commands of Linux.
 
 There are two internal env vars defined by jsh：  
  - SCPEXEC, set 1 or TRUE if users/groups are allowed to use scp.
@@ -106,11 +108,11 @@ The “vi” and “vim” has been aliased as "vim -Z" by jsh, to avoid user ex
 ### 4.3 Add permitted command syntaxes
 
 Configure each permitted command as a syntax line in the configuration file. Precautions:
-- The first keyword of each command syntax must coresponds to an existing excetuable file. For example, "history" is a bash internal command keyword, there is no executable "history" present in any bin or sbin directory, so adding a "history" syntax line is invalid.
+- The first keyword of each command syntax must coresponds to an existing excetuable file (except for alias). For example, "history" is a bash internal command, but there is no executable "history" present in any bin or sbin directory, so adding a "history" syntax line is invalid.
 - "cd", "exit" are jsh builtin commands and do not need to be added repeatedly.
-- Use lowercase words as command keywords (Linux commands are all lowercase). Uppercase words are usually used to express lexical keywords. If the uppercase word does not match any lexical types, it is considered a keyword. Refer to [Section 4.4](#44-lexical-types-of-jsh) for more details about jsh lexical types.
-- The command syntaxes in the group configuration file do not need to be added repeatedly in the user configuration file. That is, only the extra command syntax required by the user should be configured in the user file.
-- The parameter formats and sequences specified in the syntax need to match the requirements of the actual commands, otherwise error will occur during execution.
+- Use lowercase words as command keywords (Linux commands are all lowercase). Uppercase words are usually used for lexical types. If the uppercase word does not match any lexical types, it is considered a command keyword. Refer to [Section 4.4](#44-lexical-types-of-jsh) for more details about jsh lexical types.
+- The command syntaxes in the group configuration do not need to be added repeatedly in the user configuration. That is, only those extra command syntaxes  required by the user should be configured in the user file.
+- The parameters‘ format and sequence specified in the syntax need to meet the requirements of the actual commands, otherwise error will occur during execution.
 
 Below example allows user to make new directory and update self cron jobs.
 ```
@@ -118,14 +120,14 @@ mkdir PATH
 crontab -e 
 ```
 
-Special syntax charactors **[ ] { | }** are allowed for option or alternatives in the syntax line.
-- **Alternative** segment **{ | }**  , allows two of more tokens separated by '**|**' . E.g. " { block | pass } "，" { tcp | udp | icmp } "
-- **Optional** segment **[  ]**, each segment can have multiple tokens. E.g. " [ -c COUNT ] [ -s PKT_SIZE ] "
+Special syntax charactors **[ ] { | }** are allowed for options or alternatives in the syntax line.
+- **Alternative** segment **{ | }**  , allows two of more tokens separated by '**|**' . E.g. " { add | del } "
+- **Optional** segment **[  ]**, each segment can have multiple tokens. E.g. " [ -c INT ] "
 
 Usage limitaions of syntax charactors:
 - SPACE must be present between reserved chars, or between reserved char and other tokens.
 - NO **[ ]** or **{ }** are allowed to be nested inside **{ }**.
-- **{ }** can be nested inside **[ ]**. E.g.  " [ from { IP_ADDR | IFNAME } ] "
+- **{ }** can be nested inside **[ ]**. E.g.  " [ -c { 5 | 10 | 100 } ] "
 
 Below example allows user to ping IP or domain name, and to use -c option to choose the number of ICMP packets amonng 5, 10, and 100.
 ```
