@@ -5,14 +5,14 @@ JSH 一个简单的 Jailed Shell 工具，部署 JSH 并不需要复杂的 docke
 
 如果应用场景如下，那么 JSH 可能是适合你的：
 - 需要限定某一组或某个用户，只能访问有限的 Linux 命令，甚至命令选项也是限定的，比如只能 crontab -e，只能 ssh 到某几台主机
-- 这些用户不是高级 Linux 用户，不需要管道过滤、grep 这些相对复杂的操作
+- 这些用户不是高级 Linux 用户，不需要管道过滤、grep 等相对复杂的操作，或者主机环境不需要用户做这些操作
 
 部署 JSH 需要的步骤：
 1. 编译和安装 jsh ，注意 jsh 依赖 [libocli](https://github.com/diggerwoo/libocli)，需要先编译安装 libocli
 2. 编辑用户组或用户的命令配置文件
-3. 编辑 /etc/passwd，或者 usermod -s .. -g .. 改变用户的 shell 和 group
+3. 编辑 /etc/passwd，或者 usermod -s /usr/local/bin/jsh -g <受限用户组> 改变用户的 shell 和 group 属性
 
-然后用户登录后就进入到一个限定命令范围的 shell 环境了，所能访问的命令就是上面第二步配置文件里所指定的。
+之后用户再登录就会进入一个命令受限的 shell 环境，所能访问的命令就是上面第 2 步配置文件里所指定的。
 
 ## 1. 编译安装
 ```sh
@@ -21,11 +21,14 @@ make install
 ```
 上述步骤完成后，可执行文件 jsh 被安装到 /usr/local/bin，一个配置例子文件 group.jailed.conf 被安装到 /usr/local/etc/jsh.d 目录。
 
+
 ## 2. 编辑组或用户配置文件
 
-假设用户属于组 "jailed" ，那么用户对应的组配置文件就是 /usr/local/etc/jsh.d/group.jailed.conf。
-jsh 配置设计为以组文件优先，即先尝试加载组配置文件，再尝试加载用户配置文件，这样做的目的是尽量减少配置。
-如果对于组内的个别用户需要额外的命令，比如 admin 用户，那么再去配置 /usr/local/etc/jsh.d/user.admin.conf，增加 admin 所需要的其它命令。
+jsh 的配置文件部署于 /usr/local/etc/jsh.d 下。
+假设用户 "testuser" 属于组 "jailed" ，那么用户对应的组配置文件就是 group.jailed.conf，用户配置文件为 group.testuser.conf 。
+jsh 配置设计为以组文件优先，即先尝试加载组配置文件，再尝试加载用户配置文件。
+若一个组内所有用户控制策略相同，那么本组只需要配置一个组文件，而不需要配置任何用户文件。
+若组内有个别用户需要额外的命令，比如 admin 用户，那么再去配置 user.admin.conf，增加 admin 所需要的其它命令。
 配置文件说明详见 [第 4 节](#4-配置文件说明)。
 
 在 [group.jailed.conf](conf/group.jailed.conf) 这个例子里，我们允许 jailed 组用户：
@@ -61,15 +64,16 @@ crontab -e
 usermod -g jailed -s /usr/local/bin/jsh jailuser
 ```
 
-之后 jailuser 用户 ssh 或 console 登录后就进入到 jsh 效果如下，jsh 的使用是类似 Cisco 风格的，敲 ? 提示可访问的命令或词法帮助，敲 TAB 自动补齐关键字或 PATH，内置的 man 命令可以查看简单语法：
+之后 jailuser 用户 ssh 或 console 登录后就进入到 jsh ，其执行效果如下。jsh 的使用是类似 Cisco 风格的，敲 ? 提示可访问的命令或词法帮助，敲 TAB 自动补齐关键字或 PATH，jsh 内置的 man 命令可以查看简单语法：
 
  ![image](https://github.com/diggerwoo/blobs/blob/main/img/jsh.gif)
+
 
 ## 4. 配置文件说明
 
 ### 4.1 环境变量
 
-定义环境变量，注意等号左右不能有空格，NAME 和 VALUE 内不能有空格或单双引号：
+使用 env 关键字定义环境变量，注意等号左右不能有空格，NAME 和 VALUE 内不能有空格或单双引号：
 ```
 env <NAME>=<VALUE>
 ```
@@ -78,7 +82,7 @@ env <NAME>=<VALUE>
 env LANG=en_US.UTF-8
 ```
 
-不需要再定义 PATH 环境变量，jsh 启动时会自动设置 PATH=/bin:/sbin/:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin ，可确保查找到大多数 Linux 常用命令。
+配置文件中不需要定义 PATH 环境变量，jsh 启动时会自动设置 PATH=/bin:/sbin/:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin ，可确保查找到大多数 Linux 常用命令。
 
 jsh 自定义了与 scp 相关的两个环境变量：  
  - SCPEXEC 设置为 1 或 TRUE 时，允许用户使用 scp 传文件
@@ -104,11 +108,11 @@ jsh 内部已经将 vi 和 vim 设置别名 "vim -Z"，即不允许用户在 vim
 ### 4.3 增加可执行的命令语法
 
 注意事项：
-- 命令语法的首关键字必须对应一个可执行文件（除非使用 alias 另行指向可执行文件），比如 "history" 是 bash 内部命令关键字，但系统中并没有 history 这个可执行文件，那么在配置文件中增加 history 语法就是无效的。
+- 命令语法的首关键字必须对应一个可执行的外部命令文件（除非使用 alias 另行指向可执行文件），比如 "history" 是 bash 内部命令，但系统中并没有 history 这个可执行文件，那么在配置文件中增加 history 语法就是无效的。
 - "cd", "exit" 是 jsh 自带的命令关键字，不需要重复添加。
 - 使用小写单词作为命令关键字（Linux 的命令都是小写的），大写单词通常用于表达词法关键字，如果大写单词不匹配任何词法名字，则被认为是命令关键字。jsh 定义的词法类型关键字见 [4.4节](#44-保留的词法关键字)。
 - 在组配置文件中出现过的命令语法，不需要在用户配置文件中重复添加，即在用户文件中只配置用户额外需要的命令语法即可。
-- 语法内规定的选项、参数格式以及顺序，都需要跟外部命令的选项、参数规范相匹配，否则执行时会出错。
+- 语法内规定的选项、参数格式以及顺序，都需要跟外部命令的选项、参数规范相匹配，否则 jsh 调用外部命令时会出错。
 
 例如，允许用户 mkdir 创建目录，允许修改自己的 crontab：
 ```
