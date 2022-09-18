@@ -31,6 +31,8 @@
 
 #include "jsh.h"
 
+static char *home_dir = NULL;
+
 /*
  * Set jsh specific readline prompt
  */
@@ -77,8 +79,7 @@ cmd_cd(cmd_arg_t *cmd_arg, int do_flag)
 			path = value;
 	}
 
-	if ((!path && !(path = getenv("HOME"))) || !*path)
-		return -1;
+	if (!path || !path[0]) path = home_dir;
 
 	if (chdir(path) == 0)
 		jsh_set_prompt();
@@ -90,6 +91,31 @@ cmd_cd(cmd_arg_t *cmd_arg, int do_flag)
 }
 
 /*
+ * History utilities
+ */
+#define MAX_HIST_LINE	128
+#define JSH_HIST_FILE	".jsh_history"
+
+static int
+save_history()
+{
+	char	path[128];
+
+	snprintf(path, sizeof(path), "%s/%s", home_dir, JSH_HIST_FILE);
+	stifle_history(MAX_HIST_LINE);
+	return write_history(path);
+}
+
+static int
+load_history()
+{
+	char	path[128];
+
+	snprintf(path, sizeof(path), "%s/%s", home_dir, JSH_HIST_FILE);
+	return read_history(path);
+}
+
+/*
  * Callback of history command
  */
 static int
@@ -98,7 +124,6 @@ cmd_history(cmd_arg_t *cmd_arg, int do_flag)
 	HIST_ENTRY **his_list;
 	int	i, n, len, left;
 	char	*ptr, *buf;
-	#define MAX_HIST_LINE	128
 
 	stifle_history(MAX_HIST_LINE);
 	if (!(his_list = history_list())) return 0;
@@ -128,8 +153,7 @@ cmd_history(cmd_arg_t *cmd_arg, int do_flag)
 static int
 cmd_version(cmd_arg_t *cmd_arg, int do_flag)
 {
-	printf("%s\n", _JSH_VERSION_);
-	return 0;
+	return printf("%s\n", _JSH_VERSION_);
 }
 
 /*
@@ -311,7 +335,7 @@ jsh_init()
 
 	mylex_init();
 
-	/* Internal exit & cd commands */
+	/* Builtin exit & cd commands */
 	create_cmd(&cmd_tree, "exit", "Exit jsh", cmd_exit);
 	add_cmd_easily(cmd_tree, "exit", BASIC_VIEW, DO_FLAG);
 
@@ -320,18 +344,28 @@ jsh_init()
 	add_cmd_easily(cmd_tree, "cd [ PATH ]", BASIC_VIEW, DO_FLAG);
 	set_cmd_arg_helper(cmd_tree, ARG(PATH), dir_helper);
 
+	/* Builtin history & version commands */
 	create_cmd(&cmd_tree, "history", "Browse history", cmd_history);
 	add_cmd_easily(cmd_tree, "history", BASIC_VIEW, DO_FLAG);
 
 	create_cmd(&cmd_tree, "version", "Display jsh version", cmd_version);
 	add_cmd_easily(cmd_tree, "version", BASIC_VIEW, DO_FLAG);
 
-	grp = getgrgid(getgid());
-	passwd = getpwuid(getuid());
+	if (!(grp = getgrgid(getgid()))) {
+		perror("getgrgid");
+		exit(-1);
+	}
+	if (!(passwd = getpwuid(getuid()))) {
+		perror("getpwuid");
+		exit(-1);
+	}
 
-	/* Set HOME env */
-	snprintf(env_str, sizeof(env_str), "HOME=%s", passwd->pw_dir);
-	putenv(strdup(env_str));
+	if (!passwd->pw_dir || !passwd->pw_dir[0]) {
+		fprintf(stderr, "Weird missing home\n");
+		exit(-1);
+	}
+
+	home_dir = strdup(passwd->pw_dir);
 
 	/* Install commands from /usr/local/etc/jsh.d/group.<group>.conf*/
 	sprintf(path, JSH_CONF_DIR "/group.%s.conf", grp->gr_name);
@@ -341,6 +375,14 @@ jsh_init()
 	sprintf(path, JSH_CONF_DIR "/user.%s.conf", passwd->pw_name);
 	jsh_read_conf(path);
 
+	snprintf(env_str, sizeof(env_str), "HOME=%s", home_dir);
+	putenv(strdup(env_str));
+
+	/* Avoid crontab -e executing external commands */
+	putenv("VISUAL=vim -Z");
+	putenv("EDITOR=vim -Z");
+
+	load_history();
 	return 0;
 }
 
@@ -378,9 +420,7 @@ auth_scp_exec(char *arg)
 	if (!get_abs_dir(ptr, abs_dir, sizeof(abs_dir)))
 		goto err_out;
 
-	if (!(dir = getenv("HOME")) || !*dir)
-		goto err_out;
-
+	dir = home_dir;
 #ifdef DEBUG_JSH
 	syslog(LOG_DEBUG, "abs_dir='%s' HOME='%s'", abs_dir[0] ? abs_dir:"", dir);
 #endif
@@ -456,6 +496,7 @@ main(int argc, char **argv)
 	jsh_set_prompt(BASIC_VIEW);
 
 	ocli_rl_loop();
+	save_history();
 out:
 	ocli_rl_exit();
 	return res;
