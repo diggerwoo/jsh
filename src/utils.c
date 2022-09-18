@@ -50,6 +50,8 @@ exec_system_cmd(char *cmd)
 #endif
 
 	if ((pid = fork()) == 0) {
+		ocli_rl_exit();
+		signal(SIGINT, SIG_DFL);
 		argc = get_argv(cmd, &argv, NULL);
 		if (execvp(argv[0], argv) < 0) {
 			fprintf(stderr, "exec_system_cmd execvp: %s",
