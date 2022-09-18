@@ -25,10 +25,10 @@ After making process, the jsh will be installed into /usr/local/bin, and a sampl
 
 ## 2. Edit group or user configuration
 
-The jsh configuration is deployed under /usr/local/etc/jsh.d. Assuming user "testuser" belongs to group "jailed", then the group configuration file will be group.jailed.conf , while the user file will be group.testuser.conf .
+The jsh configuration is deployed under “/usr/local/etc/jsh.d”. Assuming user "testuser" belongs to group "jailed", then the group configuration file will be “group.jailed.conf” , while the user file will be “group.testuser.conf” .
 The jsh will try to load the group configuration first, and then try to load the user specific configuration. 
 If all users in a group have the same control policy, only one group file needs to be configured.
-If additional commands are needed for specific users in the group, such as the “admin”, then go to configure user.admin.conf. See the [section 4](#4-Configuration-file) for detailed description of configuration file.
+If additional commands are needed for specific users in the group, such for user “admin”, then go to configure “user.admin.conf” . See the [section 4](#4-Configuration-file) for detailed description of configuration file.
 
 In the sample configuration [group.jailed.conf](conf/group.jailed.conf), we allow users of jailed group to:
 - excecute limited comands: id, pwd, ls, mkdir, rm. vim, ping, ssh, crontab -e .
@@ -72,7 +72,7 @@ The man command can be used to display brief command syntaxes.
 
 ### 4.1 Environment variables
 
-The keyword "env" is used to define environment which is quite like Linux's. Note there can be no spaces beside the ‘=’, and no spaces or single/double quotation marks inside <NAME> and <VALUE>:
+The keyword "env" is used to define environment. Note there can be no spaces beside the ‘=’, and no spaces or single/double quotation marks inside <NAME> and <VALUE>:
 ```
 env <NAME>=<VALUE>
 ```
@@ -85,7 +85,7 @@ There is no need to define the env PATH. When jsh starts it sets "PATH=/bin:/sbi
 
 There are two internal env vars defined by jsh：  
  - SCPEXEC, set 1 or TRUE if users/groups are allowed to use scp.
- - SCPDIR, defines accessible directories other than HOME. Multi directory shoud be separated by ':'.
+ - SCPDIR, defines accessible directories other than user's home directory. Multi directory shoud be separated by ':'.
 
 For example:
 ```
