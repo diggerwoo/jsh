@@ -72,7 +72,7 @@ The man command can be used to display brief command syntaxes.
 
 ### 4.1 Environment variables
 
-The keyword "env" is used to define environment. Note there can be no spaces beside the ‘=’, and no spaces or single/double quotation marks inside <NAME> and <VALUE>:
+The keyword "env" is used to define environment. Note there can be no SPACEs beside the ‘=’, and no SPACEs or single/double quotation marks inside NAME and VALUE:
 ```
 env <NAME>=<VALUE>
 ```
