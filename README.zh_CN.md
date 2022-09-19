@@ -1,10 +1,10 @@
 # JSH - A Simple Jailed Shell
 中文 | [English](README.md)
 
-JSH 一个简单的 Jailed Shell 工具，部署 JSH 并不需要复杂的 docker 或 chroot 配置，只需要一个可执行 shell 文件，以及一个或若干简单的配置文件。
+JSH 一个简单易用的 Jailed Shell 工具，部署 JSH 并不需要复杂的 docker 或 chroot 配置，只需要一个可执行 jsh 文件，以及一个或若干简单的配置文件。
 
 如果应用场景如下，那么 JSH 可能是适合你的：
-- 需要限定某一组或某个用户，只能访问有限的 Linux 命令，甚至命令选项也是限定的，比如只能 crontab -e，只能 ssh 到某几台主机
+- 需要限定某一组或某个用户，只能访问有限的 Linux 命令，甚至命令选项也是限定的，比如：只能 crontab -e，只能 ssh 到某几台指定的主机
 - 这些用户不是高级 Linux 用户，不需要管道过滤、grep 等相对复杂的操作，或者主机环境不需要用户做这些操作
 
 部署 JSH 需要的步骤：
