@@ -1,11 +1,11 @@
-# JSH - A Simple Jailed Shell
+# JSH - An easy-to-use Jailed Shell
 English | [中文](README.zh_CN.md)
 
-JSH is a simple Jailed Shell tool. 
+JSH is an easy-to-use Jailed Shell tool. 
 The Deployment of JSH is easy and does not require complicated docker or chroot, only an executable jsh and simple configuration files will be needed.
 
 If the application scenario is as follows, then JSH may be suitable for you:
-- Need to limit certain groups or certain users to only access limited Linux commands. E.g. crontab -e, ssh to a limited range of hosts.
+- Need to limit certain groups or certain users to only access limited Linux commands, and even command options are limited. E.g. "crontab -e", only ssh to limited range of hosts.
 - These users are not advanced Linux administrators and do not need operations such as pipe filtering, grep, or the host environment does not need them to do this.
 
 Key steps required to deploy JSH:
