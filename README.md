@@ -1,7 +1,7 @@
 # JSH - An easy-to-use Jailed Shell
 English | [中文](README.zh_CN.md)
 
-JSH is an easy-to-use Jailed Shell tool. 
+JSH is an easy-to-use Jailed Shell tool for Linux. 
 The Deployment of JSH is easy and does not require complicated docker or chroot, only an executable jsh and simple configuration files will be needed.
 
 If the application scenario is as follows, then JSH may be suitable for you:
