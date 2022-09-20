@@ -22,7 +22,7 @@
 
 #include <ocli/ocli.h>
 
-#define _JSH_VERSION_	"jsh 0.95"
+#define _JSH_VERSION_	"jsh 0.96"
 
 /* Default jsh configuration directory */
 #define JSH_CONF_DIR	"/usr/local/etc/jsh.d"
