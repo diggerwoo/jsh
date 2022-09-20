@@ -368,11 +368,11 @@ jsh_init()
 	home_dir = strdup(passwd->pw_dir);
 
 	/* Install commands from /usr/local/etc/jsh.d/group.<group>.conf*/
-	sprintf(path, JSH_CONF_DIR "/group.%s.conf", grp->gr_name);
+	snprintf(path, sizeof(path), JSH_CONF_DIR "/group.%s.conf", grp->gr_name);
 	jsh_read_conf(path);
 
 	/* Install commands from /usr/local/etc/jsh.d/user.<user>.conf*/
-	sprintf(path, JSH_CONF_DIR "/user.%s.conf", passwd->pw_name);
+	snprintf(path, sizeof(path), JSH_CONF_DIR "/user.%s.conf", passwd->pw_name);
 	jsh_read_conf(path);
 
 	snprintf(env_str, sizeof(env_str), "HOME=%s", home_dir);
@@ -428,6 +428,9 @@ auth_scp_exec(char *arg)
 	/* Try HOME dir prefix match */
 	if (dir[strlen(dir) - 1] != '/')
 		snprintf(prefix, sizeof(prefix), "%s/", dir);
+	else
+		snprintf(prefix, sizeof(prefix), "%s", dir);
+
 	if (strncmp(abs_dir, prefix, strlen(prefix)) == 0) {
 		syslog(LOG_INFO, "'%s' matches home '%s'\n",
 		       abs_dir[0] ? abs_dir:"", prefix);
@@ -444,6 +447,8 @@ auth_scp_exec(char *arg)
 		if (!*dir) continue;
 		if (dir[strlen(dir) - 1] != '/')
 			snprintf(prefix, sizeof(prefix), "%s/", dir);
+		else
+			snprintf(prefix, sizeof(prefix), "%s", dir);
 		if (strncmp(abs_dir, prefix, strlen(prefix)) == 0) {
 			syslog(LOG_INFO, "'%s' matches scpdir '%s'\n",
 			       abs_dir[0] ? abs_dir:"", prefix);
