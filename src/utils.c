@@ -18,6 +18,7 @@
  */
 
 #include <stdio.h>
+#include <stdarg.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -30,14 +31,16 @@
 #include <libgen.h>
 #include <syslog.h>
 #include <ocli/ocli.h>
+#include <sys/ptrace.h>
 
+#include "jsh.h"
 #include "man.h"
 
 /*
  * exec external commands
  */
 int
-exec_system_cmd(char *cmd)
+exec_system_cmd(char *cmd, int jmode)
 {
 	pid_t	pid;
 	int	argc = 0;
@@ -45,14 +48,17 @@ exec_system_cmd(char *cmd)
 	int	res = 0;
 
 	if (!cmd || !cmd[0]) return -1;
-#ifdef DEBUG_JSH
-	syslog(LOG_DEBUG, "exec [%s]\n", cmd);
-#endif
+	syslog(LOG_DEBUG, "exec [%s] jmode [%d]", cmd, jmode);
+	argc = get_argv(cmd, &argv, NULL);
 
 	if ((pid = fork()) == 0) {
 		ocli_rl_exit();
 		signal(SIGINT, SIG_DFL);
-		argc = get_argv(cmd, &argv, NULL);
+
+		if (jmode == 1) {
+			ptrace(PTRACE_TRACEME, 0, NULL, NULL);
+		}
+
 		if (execvp(argv[0], argv) < 0) {
 			fprintf(stderr, "exec_system_cmd execvp: %s",
 				strerror(errno));
@@ -61,6 +67,11 @@ exec_system_cmd(char *cmd)
 		}
 
 	} else if (pid != -1) {
+		if (jmode == 1) {
+			if (jtrace(pid, argc, argv) == 0)
+				return 0;
+		}
+
 		if (waitpid(pid, &res, 0) < 0) {
 			fprintf(stderr, "exec_system_cmd waitpid: %s",
 				strerror(errno));
@@ -106,24 +117,52 @@ get_man_desc(char *cmd, char *desc, int len)
 }
 
 /*
- * Get absolute directory of the path, ugly by chdir & getcwd
+ * Where is GNU version basename() ?
  */
 char *
-get_abs_dir(char *path, char *abs_dir, int len)
+get_basename(char *path)
 {
-	char	*dir;
+	char	*base = NULL;
+	if (!path || !path[0]) return NULL;
+
+	base = path + strlen(path) - 1;
+	if (*base == '/')
+		return NULL;
+
+	while (base > path) {
+		if (*(base-1) == '/')
+			break;
+		else
+			base--;
+	}
+	return base;
+}
+
+/*
+ * Get absolute directory of the path, ugly by chdir & getcwd.
+ * Set full 1 for getting full path including the file name.
+ */
+char *
+get_abs_dir(char *path, char *abs_dir, int len, int full)
+{
+	char	*dir, *fname = NULL;
 	char	buf[PATH_MAX];
 	char	cwd[PATH_MAX];
+	int	n;
 	struct stat stat_buf;
 
 	if (!path || !path[0] || !abs_dir || len < 8)
 		return NULL;
 
 	snprintf(buf, sizeof(buf), "%s", path);
-	if (stat(buf, &stat_buf) == 0 && S_ISDIR(stat_buf.st_mode))
+	if (stat(buf, &stat_buf) == 0 && S_ISDIR(stat_buf.st_mode)) {
 		dir = buf;
-	else if (!(dir = dirname(buf)))
-		return NULL;
+	} else {
+		if (!(dir = dirname(buf)))
+			return NULL;
+		if (full)
+			fname = get_basename(path);
+	}
 
 	if (!getcwd(cwd, sizeof(cwd))) return NULL;
 
@@ -138,14 +177,68 @@ get_abs_dir(char *path, char *abs_dir, int len)
 	/* getcwd does not append tailing '/', but we need trailing '/'
 	 * for acurate dir prefix match
 	 */
-	if (strlen(abs_dir) < len - 1) {
-		strncat(abs_dir, "/", 1);
-	} else {
-		syslog(LOG_ERR, "get_abs_dir: no space to append '/' to '%s'",
-		       dir);
-		return NULL;
+	n = strlen(abs_dir);
+	if (abs_dir[n - 1] != '/') {
+		if (n < len - 1) {
+			strncat(abs_dir, "/", 1);
+		} else {
+			syslog(LOG_ERR, "get_abs_dir: no space to append '/' to '%s'",
+			       abs_dir);
+			chdir(cwd);
+			return NULL;
+		}
+	}
+
+	if (full && fname && *fname) {
+		n = strlen(abs_dir) + strlen(fname);
+		if (n < len) {
+			strcat(abs_dir, fname);
+		} else {
+			syslog(LOG_ERR, "get_abs_dir full: no space to append '%s' to '%s'",
+			       fname, abs_dir);
+			chdir(cwd);
+			return NULL;
+		}
 	}
 
 	chdir(cwd);
 	return abs_dir;
+}
+
+/*
+ * Test if dir or file entry is in subdir of path.
+ * The path may contain multi entires separatd by colon.
+ */ 
+int
+in_subdir(char *ent, char *path)
+{
+	char	*dir;
+	char	abs_dir[PATH_MAX];
+	char	prefix[PATH_MAX];
+	char	buf[512];
+
+	if (!ent || !*ent || !path || !*path)
+		return 0;
+
+	if (!get_abs_dir(ent, abs_dir, sizeof(abs_dir), 0))
+		return 0;
+
+	snprintf(buf, sizeof(buf), "%s", path);
+	dir = strtok(buf, ":");
+	while (dir) {
+		if (!*dir) continue;
+		if (dir[strlen(dir) - 1] != '/')
+			snprintf(prefix, sizeof(prefix), "%s/", dir);
+		else
+			snprintf(prefix, sizeof(prefix), "%s", dir);
+		if (strncmp(abs_dir, prefix, strlen(prefix)) == 0) {
+			syslog(LOG_INFO, "'%s' is subdir of '%s'\n",
+			       abs_dir, prefix);
+			return 1;
+		}
+		dir = strtok(NULL, ":");
+	}
+	syslog(LOG_DEBUG, "'%s' is not any subdir of '%s'\n",
+	       abs_dir, path);
+	return 0;
 }
