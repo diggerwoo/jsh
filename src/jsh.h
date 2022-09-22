@@ -20,12 +20,17 @@
 #ifndef _JSH_H
 #define _JSH_H
 
+#include <sys/types.h>
 #include <ocli/ocli.h>
 
-#define _JSH_VERSION_	"jsh 0.96"
+#define _JSH_VERSION_	"jsh 0.97"
+
+extern char *home_dir;
+extern char *sftp_server;
 
 /* Default jsh configuration directory */
 #define JSH_CONF_DIR	"/usr/local/etc/jsh.d"
+#define SFTP_SERVER	"/usr/libexec/openssh/sftp-server"
 
 #define LEX_PATH	LEX_CUSTOM_TYPE(0)
 
@@ -36,8 +41,15 @@ extern int is_path(char *str);
 extern int is_captical_word(char *str);
 extern int mylex_init(void);
 
-extern int exec_system_cmd(char *cmd);
+extern int exec_system_cmd(char *cmd, int jmode);
 extern char *get_man_desc(char *cmd, char *desc, int len);
-extern char *get_abs_dir(char *path, char *abs_dir, int len);
+
+extern char *get_basename(char *path);
+extern char *get_abs_dir(char *path, char *abs_dir, int len, int full);
+extern int in_subdir(char *ent, char *path);
+extern int in_scp_homes(char *ent);
+#define in_sftp_homes(x) in_scp_homes(x)
+
+extern int jtrace(pid_t pid, int argc, char **argv);
 
 #endif	/* _JSH_H */
