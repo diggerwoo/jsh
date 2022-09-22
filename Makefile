@@ -11,8 +11,7 @@ ETC = /usr/local/etc
 JSHDIR = $(ETC)/jsh.d
 SAMPLE = group.jailed.conf
 
-#CFLAGS := -O2 -Wall -Wno-unused-but-set-variable -g $(INC)
-CFLAGS := -std=gnu99 -DDEBUG_JSH -O2 -Wall -Wno-unused-but-set-variable -g $(INC)
+CFLAGS := -O2 -Wall -Wno-unused-but-set-variable -g $(INC)
 CC := gcc
 AR := ar
 RM := rm -rf
@@ -20,7 +19,7 @@ CP := cp -rf
 
 default: jsh
 
-OBJS =	$(SRC)/jsh.o $(SRC)/utils.o $(SRC)/mylex.o
+OBJS =	$(SRC)/jsh.o $(SRC)/utils.o $(SRC)/mylex.o $(SRC)/jtrace.o
 
 jsh: $(OBJS)
 	$(CC) -o $@ $^ /usr/local/lib/libocli.a -lpcre -lreadline
