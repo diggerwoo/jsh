@@ -24,6 +24,7 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <syslog.h>
 #include <pwd.h>
 #include <grp.h>
@@ -31,7 +32,8 @@
 
 #include "jsh.h"
 
-static char *home_dir = NULL;
+char	*home_dir = NULL;
+char	*sftp_server = SFTP_SERVER;
 
 /*
  * Set jsh specific readline prompt
@@ -203,7 +205,7 @@ cmd_entry(cmd_arg_t *cmd_arg, int do_flag)
 	}
 
 	if (cmd_str[0]) {
-		exec_system_cmd(cmd_str);
+		exec_system_cmd(cmd_str, 0);
 	}
 
 	return 0;
@@ -331,6 +333,7 @@ jsh_init()
 	struct cmd_tree *cmd_tree;
 	struct passwd	*passwd = NULL;
 	struct group	*grp = NULL;
+	struct stat	stat_buf;
 	char	path[64], env_str[80];
 
 	mylex_init();
@@ -367,6 +370,11 @@ jsh_init()
 
 	home_dir = strdup(passwd->pw_dir);
 
+	/* Default disable per user .jsh_debug */
+	snprintf(path, sizeof(path), "%s/.jsh_debug", home_dir);
+	if (stat(path, &stat_buf) != 0)
+		setlogmask(~LOG_MASK(LOG_DEBUG));
+
 	/* Install commands from /usr/local/etc/jsh.d/group.<group>.conf*/
 	snprintf(path, sizeof(path), JSH_CONF_DIR "/group.%s.conf", grp->gr_name);
 	jsh_read_conf(path);
@@ -387,24 +395,55 @@ jsh_init()
 }
 
 /*
+ * Test if dir entry is inside scp HOME dirs
+ */
+int
+in_scp_homes(char *ent)
+{
+	char	*dir; 
+
+	if (!ent || !*ent) return 0;
+
+	if (in_subdir(ent, home_dir) ||
+	    ((dir = getenv("SCPDIR")) && in_subdir(ent, dir)))
+		return 1;
+	else
+		return 0;
+}
+
+/*
+ * Has "env SCPEXEC=1" or "env SCPEXEC=True"
+ */
+static int
+scp_enabled()
+{
+	char	*ptr; 
+	return  ((ptr = getenv("SCPEXEC")) &&
+		 (strcmp(ptr, "1") == 0 || strcasecmp(ptr, "True") == 0));
+}
+
+/*
+ * Get sftp-server path
+ */
+static char *
+get_sftp_server()
+{
+	char	*path; 
+	if ((path = getenv("SFTP_SERVER")))
+		return path;
+	else
+		return SFTP_SERVER;
+}
+
+/*
  * Try to authorize the scp command transfered by "jsh -c"
  */
 int
 auth_scp_exec(char *arg)
 {
-	char	*ptr, *dir;
-	char	abs_dir[PATH_MAX];
-	char	prefix[PATH_MAX];
-	char	buf[1200];
+	char	*ptr;
 
 	if (!arg || !arg) return -1;
-
-	/* Must have "env SCPEXEC=1" or "env SCPEXEC=True" */
-	if (!(ptr = getenv("SCPEXEC")) ||
-	    (strcmp(ptr, "1") != 0 && strcasecmp(ptr, "True") != 0)) {
-		syslog(LOG_WARNING, "Unautorized -c '%s'", arg);
-		goto err_out;
-	}
 
 	/* Only "scp -f" or "scp -t" is acceptible */
 	if (strncmp(arg, "scp -f ", 7) != 0 &&
@@ -417,46 +456,7 @@ auth_scp_exec(char *arg)
 		goto err_out;
 	}
 
-	if (!get_abs_dir(ptr, abs_dir, sizeof(abs_dir)))
-		goto err_out;
-
-	dir = home_dir;
-#ifdef DEBUG_JSH
-	syslog(LOG_DEBUG, "abs_dir='%s' HOME='%s'", abs_dir[0] ? abs_dir:"", dir);
-#endif
-
-	/* Try HOME dir prefix match */
-	if (dir[strlen(dir) - 1] != '/')
-		snprintf(prefix, sizeof(prefix), "%s/", dir);
-	else
-		snprintf(prefix, sizeof(prefix), "%s", dir);
-
-	if (strncmp(abs_dir, prefix, strlen(prefix)) == 0) {
-		syslog(LOG_INFO, "'%s' matches home '%s'\n",
-		       abs_dir[0] ? abs_dir:"", prefix);
-		return 0;
-	}
-
-	/* Try each prefix match of SCPDIR */
-	if (!(dir = getenv("SCPDIR")))
-		goto err_out;
-
-	snprintf(buf, sizeof(buf), "%s", dir);
-	dir = strtok(buf, ":");
-	while (dir) {
-		if (!*dir) continue;
-		if (dir[strlen(dir) - 1] != '/')
-			snprintf(prefix, sizeof(prefix), "%s/", dir);
-		else
-			snprintf(prefix, sizeof(prefix), "%s", dir);
-		if (strncmp(abs_dir, prefix, strlen(prefix)) == 0) {
-			syslog(LOG_INFO, "'%s' matches scpdir '%s'\n",
-			       abs_dir[0] ? abs_dir:"", prefix);
-			return 0;
-		}
-		dir = strtok(NULL, ":");
-	}
-
+	if (in_scp_homes(ptr)) return 0;
 err_out:
 	printf("Unauthorized access, abort\n");
 	return -1;
@@ -486,12 +486,14 @@ main(int argc, char **argv)
 
 	/* Try jailed scp */
 	if (argc >= 3 && strcmp(argv[1], "-c") == 0) {
-#ifdef DEBUG_JSH
-		for (int i = 1; i < argc; i++)
-			syslog(LOG_DEBUG, "arg[%d] = '%s'", i, argv[i]);
-#endif
-		if ((res = auth_scp_exec(argv[2])) == 0)
-			res = exec_system_cmd(argv[2]);
+		if (!scp_enabled()) goto out;
+		syslog(LOG_DEBUG, "-c '%s'", argv[2]);
+
+		if ((sftp_server = get_sftp_server()) &&
+		    strcmp(argv[2], sftp_server) == 0)
+			res = exec_system_cmd(argv[2], 1);
+		else if ((res = auth_scp_exec(argv[2])) == 0)
+			res = exec_system_cmd(argv[2], 0);
 		goto out;
 	}
 
