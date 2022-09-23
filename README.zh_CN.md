@@ -4,8 +4,9 @@
 JSH 是一个适用于 Linux 平台的 Jailed Shell 工具，部署 JSH 并不需要复杂的 docker 或 chroot 配置，只需要一个可执行 jsh 文件，以及一个或若干简单的配置文件。
 
 如果应用场景如下，那么 JSH 可能是适合你的：
-- 需要限定某一组或某个用户，只能访问有限的 Linux 命令，甚至命令选项也是限定的，比如：只能 crontab -e，只能 ssh 到某几台指定的主机
-- 这些用户不是高级 Linux 用户，不需要管道过滤、grep 等相对复杂的操作，或者主机环境不需要用户做这些操作
+- 需要限定某一组或某个用户，只能访问有限的 Linux 命令，甚至命令选项也是限定的，比如：只能 ssh 到某几台指定的主机
+- 需要限定 sftp 或 scp 只能访问自己的 HOME 目录，以及指定的公共目录
+- 主机环境不需要这些用户做相对复杂的 shell 操作，诸如管道过滤、重定向等等
 
 部署 JSH 需要的步骤：
 1. 编译和安装 jsh ，注意 jsh 依赖 [libocli](https://github.com/diggerwoo/libocli)，需要先编译安装 libocli
@@ -25,14 +26,14 @@ make install
 ## 2. 编辑组或用户配置文件
 
 jsh 的配置文件部署于 /usr/local/etc/jsh.d 下。
-假设用户 "testuser" 属于组 "jailed" ，那么用户对应的组配置文件就是 group.jailed.conf，用户配置文件为 group.testuser.conf 。
+假设用户 "testuser" 属于组 "jailed" ，那么用户对应的组配置文件就是 "group.jailed.conf"，用户配置文件为 "user.testuser.conf" 。
 jsh 配置设计为以组文件优先，即先尝试加载组配置文件，再尝试加载用户配置文件。
 若一个组内所有用户控制策略相同，那么本组只需要配置一个组文件，而不需要配置任何用户文件。
 若组内有个别用户需要额外的命令，比如 admin 用户，那么再去配置 user.admin.conf，增加 admin 所需要的其它命令。
 配置文件说明详见 [第 4 节](#4-配置文件说明)。
 
 在 [group.jailed.conf](conf/group.jailed.conf) 这个例子里，我们允许 jailed 组用户：
-- 执行 id, pwd, ls, vim, ping, ssh, crontab -e 这几个命令.
+- 执行 id, pwd, passwd, ls, vim, ping, ssh 这几个命令.
 - 使用 scp 访问自己 HOME 目录，以及 /home/public 这个公共目录，做上传下载。
 
 ```sh
@@ -46,6 +47,7 @@ alias ls "ls -a"
 # 允许的命令语法
 id
 pwd
+passwd
 ls -l [ PATH ]
 ls [ PATH ]
 mkdir PATH
@@ -53,7 +55,6 @@ rm [ -rf ] PATH
 vim [ PATH ]
 ping [ -c INT ] { IP_ADDR | DOMAIN_NAME }
 ssh NET_UID
-crontab -e
 ```
 
 ## 3. 修改用户的组和 shell 属性
@@ -85,13 +86,18 @@ env LANG=en_US.UTF-8
 配置文件中不需要定义 PATH 环境变量，jsh 启动时会自动设置 PATH=/bin:/sbin/:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin ，可确保查找到大多数 Linux 常用命令。
 
 jsh 自定义了与 scp 相关的两个环境变量：  
- - SCPEXEC 设置为 1 或 TRUE 时，允许用户使用 scp 传文件
- - SCPDIR  设置用户除了 HOME 目录之外可访问的目录，用冒号可隔离多个目录
+ - SCPEXEC 设置为 1 或 TRUE 时，允许用户使用 sftp 后 scp 传文件
+ - SCPDIR  设置用户除 HOME 目录之外可访问的目录，用冒号可隔离多个目录
+ - SCP_SERVER 设置 sftp-server 路径，默认为 /usr/libexec/openssh/sftp-server，若所在系统 sftp-server 的路径与此不一致，则需要手工配置此环境变量，路径与 ssh_config 文件中的 subsystem sftp 指定的 sftp-server 路径相同
+ > 注意 sshd_config 文件中的 subsystem sftp 不能配置为 internal-sftp，internal-sftp 无法与 jsh 配合实现 HOME 目录访问限制
+
 比如：  
 ```
 env SCPEXEC=1
 env SCPDIR=/home/public:/var/www
+env SFTP_SERVER=/usr/libexec/openssh/sftp-server
 ```
+
 
 ### 4.2 命令的别名
 
