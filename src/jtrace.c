@@ -75,14 +75,15 @@ jtrace_sftp_server(pid_t pid, int argc, char **argv)
 
 	char	*path;
 	int	flags;
-	char	path_info[256];
+	char	path_info[256], path_dest[256];
 	char	flags_info[64];
 	char	call_info[512];
 	int	status = 0;
 	int	res = 0;
 
 	/*
-	 * injail: Set TURE if lstat/stat/openat or open WR
+	 * injail: Set TURE if (lstat/stat/openat, open WR, or
+	 * 		        mkdir/rmdir/link/unlink/rename) called
 	 * incall: Set TURE if in lstat/stat/openat/open syscalls
 	 */
 	int	injail = 0;
@@ -211,26 +212,39 @@ jtrace_sftp_server(pid_t pid, int argc, char **argv)
 			}
 
 		} else if (regs.orig_rax == __NR_mkdir || regs.orig_rax == __NR_rmdir ||
-			   regs.orig_rax == __NR_unlink || regs.orig_rax == __NR_rename) {
+			   regs.orig_rax == __NR_unlink || regs.orig_rax == __NR_link || 
+			   regs.orig_rax == __NR_rename) {
 
 			if (incall == 0) {
 				incall = 1;
 
 				jtrace_get_string(pid, (char *) regs.rdi, path_info, sizeof(path_info)-1);
-				snprintf(call_info, sizeof(call_info),
-					"%s(\"%s\")",
-					get_callname(regs.orig_rax),
-					path_info[0] ? path_info:"n/a");
+				bzero(path_dest, sizeof(path_dest));
+
+				if (regs.orig_rax == __NR_link || regs.orig_rax == __NR_rename) {
+					jtrace_get_string(pid, (char *) regs.rsi, path_dest, sizeof(path_dest)-1);
+					snprintf(call_info, sizeof(call_info),
+						"%s(\"%s\", \"%s\")",
+						get_callname(regs.orig_rax),
+						path_info[0] ? path_info:"n/a",
+						path_dest[0] ? path_dest:"n/a");
+				} else {
+					snprintf(call_info, sizeof(call_info),
+						"%s(\"%s\")",
+						get_callname(regs.orig_rax),
+						path_info[0] ? path_info:"n/a");
+				}
 
 				if (!injail) {
 					injail = 1;
 					syslog(LOG_DEBUG, "injail triggered by %s\n", call_info);
 				}
 
-				/* limit mkdir/rmdir/unlink/rename inside home dirs */
+				/* limit mkdir/rmdir/unlink/link/rename inside home dirs */
 				if (injail) {
 					block = 0;
-					if (!in_sftp_homes(path_info)) {
+					if (!in_sftp_homes(path_info) ||
+					    (path_dest[0] && !in_sftp_homes(path_dest))) {
 						syslog(LOG_DEBUG, "deny %s\n", call_info);
 						regs.orig_rax = -1;
 						if ((res = ptrace(PTRACE_SETREGS, pid, 0, &regs)) < 0) {
@@ -331,6 +345,10 @@ get_callname(long nr)
 		return "rmdir";
 	case __NR_unlink:
 		return "unlink";
+	case __NR_link:
+		return "link";
+	case __NR_rename:
+		return "rename";
 	default:
 		break;
 	}
