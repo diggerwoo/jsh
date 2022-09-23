@@ -5,8 +5,9 @@ JSH is an easy-to-use Jailed Shell tool for Linux.
 The Deployment of JSH is easy and does not require complicated docker or chroot, only an executable jsh and simple configuration files will be needed.
 
 If the application scenario is as follows, then JSH may be suitable for you:
-- Need to limit certain groups or certain users to only access limited Linux commands, and even command options are limited. E.g. "crontab -e", or ssh to limited range of hosts.
-- These users are not advanced Linux administrators and do not need operations such as pipe filtering, grep, or the host environment does not need them to do this.
+- Need to limit certain groups or certain users to only access limited Linux commands, and even command options are limited. E.g. ssh to limited range of hosts.
+- Need to restrict user sftp or scp to only access their own HOME directory, as well as the specified public directory.
+- The host environment does not require these users to do relatively complex shell operations, such as pipe filtering, redirection, etc.
 
 Key steps required to deploy JSH:
 1. Compile and install jsh, note that jsh depends on [libocli](https://github.com/diggerwoo/libocli), you need to compile and install libocli first.
@@ -25,17 +26,17 @@ After making process, the jsh will be installed into /usr/local/bin, and a sampl
 
 ## 2. Edit group or user configuration
 
-The jsh configuration is deployed under “/usr/local/etc/jsh.d”. Assuming user "testuser" belongs to group "jailed", then the group configuration file will be “group.jailed.conf” , while the user file will be “group.testuser.conf” .
+The jsh configuration is deployed under “/usr/local/etc/jsh.d”. Assuming user "testuser" belongs to group "jailed", then the group configuration file will be “group.jailed.conf” , while the user file will be “user.testuser.conf” .
 The jsh will try to load the group configuration first, and then try to load the user specific configuration. 
 If all users in a group have the same control policy, only one group file needs to be configured.
 If additional commands are needed for specific users in the group, such for user “admin”, then go to configure “user.admin.conf” . See the [section 4](#4-Configuration-file) for detailed description of configuration file.
 
 In the sample configuration [group.jailed.conf](conf/group.jailed.conf), we allow users of jailed group to:
-- excecute limited comands: id, pwd, ls, mkdir, rm. vim, ping, ssh, crontab -e .
+- excecute limited comands: id, pwd, passwd, ls, mkdir, rm, vim, ping, ssh .
 - use scp to upload/download file in self HOME and extra /home/public directory.
 
 ```sh
-# Allow acp, and acces extra /home/public besides HOME.
+# Allow sftp or scp to access HOME directory, as well as /home/public.
 env SCPEXEC=1
 env SCPDIR=/home/public
 
@@ -45,6 +46,7 @@ alias ls "ls -a"
 # Allowed commands
 id
 pwd
+passwd
 ls -l [ PATH ]
 ls [ PATH ]
 mkdir PATH
@@ -52,7 +54,6 @@ rm [ -rf ] PATH
 vim [ PATH ]
 ping [ -c INT ] { IP_ADDR | DOMAIN_NAME }
 ssh NET_UID
-crontab -e
 ```
 
 ## 3. Change user shell and group
@@ -84,13 +85,16 @@ env LANG=en_US.UTF-8
 There is no need to define the env PATH. When jsh starts it sets "PATH=/bin:/sbin/:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin" to make sure that it can find most of common commands of Linux.
 
 There are two internal env vars defined by jsh：  
- - SCPEXEC, set 1 or TRUE if users/groups are allowed to use scp.
+ - SCPEXEC, set 1 or TRUE if users/groups are allowed to use sftp and scp.
  - SCPDIR, defines accessible directories other than user's home directory. Multi directory shoud be separated by ':'.
+ - SCP_SERVER, sets the sftp-server path, default is /usr/libexec/openssh/sftp-server. You need to manually configure this if the path is different from your system's. The path should be the same as that specified by ”subsystem sftp“ in the opessh's ssh_config configuration file.
+ > Note the "subsystem sftp" in sshd_config cannot be configured as ”internal-sftp“. The internal-sftp cannot work with jsh to implement the HOME directory jail.
 
 For example:
 ```
 env SCPEXEC=1
 env SCPDIR=/home/public:/var/www
+env SFTP_SERVER=/usr/libexec/openssh/sftp-server
 ```
 
 ### 4.2 Alias
@@ -114,10 +118,10 @@ Configure each permitted command as a syntax line in the configuration file. Pre
 - The command syntaxes in the group configuration do not need to be added repeatedly in the user configuration. That is, only those extra command syntaxes  required by the user should be configured in the user file.
 - The parameters‘ format and sequence specified in the syntax need to meet the requirements of the actual commands, otherwise error will occur during execution.
 
-Below example allows user to make new directory and update self cron jobs.
+Below example allows user to make new directory and remove directory.
 ```
 mkdir PATH
-crontab -e 
+rmdir PATH 
 ```
 
 Special syntax charactors **[ ] { | }** are allowed for options or alternatives in the syntax line.
