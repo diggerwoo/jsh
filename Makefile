@@ -32,7 +32,7 @@ man.h:
 
 install:
 	install -m 755 -o root -g root jsh $(BIN)
-	install -m 644 -o root -g root -D conf/$(SAMPLE) $(JSHDIR)/$(SAMPLE)
+	install -m 644 -o root -g root -b -D conf/$(SAMPLE) $(JSHDIR)/$(SAMPLE)
 
 clean:
 	$(RM) jsh $(SRC)/*.o
