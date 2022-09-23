@@ -129,6 +129,7 @@ jtrace_sftp_server(pid_t pid, int argc, char **argv)
 					get_callname(regs.orig_rax),
 					path_info[0] ? path_info:"n/a", flags_info, flags);
 
+				/* Bypass opening /dev/null for RDWR during initialization */
 				if (!injail && strncmp(path_info, "/dev/", 5) &&
 				    (regs.orig_rax == __NR_openat ||
 				     FFLAG(flags, O_WRONLY) || FFLAG(flags, O_RDWR))) {
@@ -138,14 +139,21 @@ jtrace_sftp_server(pid_t pid, int argc, char **argv)
 
 				if (injail) {
 					block = 0;
+					/* Bypass opening without precedent stat/lstat
+					 */
 					if (strcmp(path_info, last_path) != 0 &&
 					    (strncmp(path_info, "/etc/", 5) == 0 ||
 					     strncmp(path_info, "/lib64/", 7) == 0 ||
 					     strncmp(path_info, "/lib/", 5) == 0 ||
 					     strncmp(path_info, "/usr/lib/", 9) == 0)) {
 						syslog(LOG_DEBUG, "bypass %s\n", call_info);
-					} else if (regs.orig_rax == __NR_openat &&
-						   (flags & O_DIRECTORY) == O_DIRECTORY) {
+					} else
+					/*
+					 * Limit opening dirs along with home dirs.
+					 * Limit opening files inside home dirs.
+					 */
+					if (regs.orig_rax == __NR_openat &&
+					    (flags & O_DIRECTORY) == O_DIRECTORY) {
 						if (!along_sftp_home(path_info)) {
 							syslog(LOG_DEBUG, "deny %s\n", call_info);
 							regs.orig_rax = -1;
@@ -185,7 +193,12 @@ jtrace_sftp_server(pid_t pid, int argc, char **argv)
 					get_callname(regs.orig_rax),
 					path_info[0] ? path_info:"n/a");
 
-				if (!injail) {
+				/* Bypass stating paths during sftp-server initialization.
+				 * These stat calls might be trigerred by SELINUX or PAM.
+				 */
+				if (!injail &&
+				    strncmp(path_info, "/etc/sysconfig/", 15) &&
+				    strncmp(path_info, "/sys/", 5)) {
 					injail = 1;
 					syslog(LOG_DEBUG, "injail triggered by %s\n", call_info);
 				}
@@ -197,15 +210,17 @@ jtrace_sftp_server(pid_t pid, int argc, char **argv)
 				 * sftp-server uses stat/lstat to assert the directory,
 				 * and uses /etc/localtime to get server side timezone
 				 */
-				if (strcmp(path_info, "/etc/localtime") != 0 &&
-				    !along_sftp_home(path_info)) {
-					regs.rax = -EACCES;
-					if ((res = ptrace(PTRACE_SETREGS, pid, 0, &regs)) < 0) {
-						syslog(LOG_ERR, "jtrace-sftp block %s: %s\n",
-							call_info, strerror(errno));
-						break;
+				if (injail) {
+					if (strcmp(path_info, "/etc/localtime") != 0 &&
+					    !along_sftp_home(path_info)) {
+						regs.rax = -EACCES;
+						if ((res = ptrace(PTRACE_SETREGS, pid, 0, &regs)) < 0) {
+							syslog(LOG_ERR, "jtrace-sftp block %s: %s\n",
+								call_info, strerror(errno));
+							break;
+						}
+						syslog(LOG_DEBUG, "block: %s = %lld\n", call_info, regs.rax);
 					}
-					syslog(LOG_DEBUG, "block: %s = %lld\n", call_info, regs.rax);
 				} else {
 					syslog(LOG_DEBUG, "%s = %lld\n", call_info, regs.rax);
 				}
