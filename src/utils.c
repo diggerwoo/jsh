@@ -37,7 +37,7 @@
 #include "man.h"
 
 /*
- * exec external commands
+ * Exec external commands
  */
 int
 exec_system_cmd(char *cmd, int jmode)
@@ -45,11 +45,15 @@ exec_system_cmd(char *cmd, int jmode)
 	pid_t	pid;
 	int	argc = 0;
 	char	**argv = NULL;
-	int	res = 0;
+	int	status, res = 0;
 
 	if (!cmd || !cmd[0]) return -1;
 	syslog(LOG_DEBUG, "exec [%s] jmode [%d]", cmd, jmode);
-	argc = get_argv(cmd, &argv, NULL);
+
+	if ((argc = get_argv(cmd, &argv, NULL)) <= 0) {
+		fprintf(stderr, "exec_system_cmd: bad args");
+		return -1;
+	}
 
 	if ((pid = fork()) == 0) {
 		ocli_rl_exit();
@@ -69,23 +73,20 @@ exec_system_cmd(char *cmd, int jmode)
 	} else if (pid != -1) {
 		if (jmode == 1) {
 			if (jtrace(pid, argc, argv) == 0)
-				return 0;
+				goto out;
 		}
-
-		if (waitpid(pid, &res, 0) < 0) {
+		if ((res = waitpid(pid, &status, 0)) < 0)
 			fprintf(stderr, "exec_system_cmd waitpid: %s",
 				strerror(errno));
-			return -1;
-		}
-		return res;
-
 	} else {
 		fprintf(stderr, "exec_system_cmd fork: %s",
 			strerror(errno));
-		return -1;
+		res = -1;
 	}
 
-	return 0;	/* NO reach, suppress GCC warning */
+out:
+	free_argv(argv);
+	return res;
 }
 
 /*
