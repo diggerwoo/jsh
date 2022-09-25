@@ -7,7 +7,7 @@ The Deployment of JSH is easy and does not require complicated docker or chroot,
 If the application scenario is as follows, then JSH may be suitable for you:
 - Need to limit certain groups or certain users to only access limited Linux commands, and even command options are limited. E.g. ssh to limited range of hosts.
 - Need to restrict user sftp or scp to only access their own HOME directory, as well as the specified public directory.
-  > The HOME Jail of SFTP is implemented based on ptrace. It works on the X86_64 but has not been tested on i386.
+  > The HOME Jail of SFTP is implemented based on ptrace. It works on X86_64 but has not been tested on i386.
 - The host environment does not require these users to do relatively complex shell operations, such as pipe filtering, redirection, etc.
 
 Key steps required to deploy JSH:
