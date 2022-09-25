@@ -155,7 +155,7 @@ cmd_history(cmd_arg_t *cmd_arg, int do_flag)
 static int
 cmd_version(cmd_arg_t *cmd_arg, int do_flag)
 {
-	return printf("%s\n", _JSH_VERSION_);
+	return printf("%s\n", JSH_VERSION);
 }
 
 /*
@@ -180,6 +180,7 @@ cmd_entry(cmd_arg_t *cmd_arg, int do_flag)
 	char	*alias = NULL;
 	char	*ptr, cmd_str[800];
 	int	len, left;
+	int	wildcard = 0, pipe_rdr = 0;
 
 	bzero(cmd_str, sizeof(cmd_str));
 	ptr = &cmd_str[0];
@@ -192,6 +193,18 @@ cmd_entry(cmd_arg_t *cmd_arg, int do_flag)
 			if (alias && alias[0])
 				value = alias;
 		}
+
+		/* Wildcard *, pipline |, or rdr > >> present */
+		if (IS_ARG(name, PATH)) {
+			if (strchr(value, '*'))
+				wildcard++;
+		} else if (IS_ARG(name, OPT)) {
+			if (strcmp(value, "|") == 0 ||
+			    strcmp(value, ">") == 0 ||
+			    strcmp(value, ">>") == 0)
+				pipe_rdr++;
+		}
+
 		if (strlen(value) < left - 3) {
 			if (i != 0 && strchr(value, ' '))
 				ptr += (len = snprintf(ptr, left, "\"%s\" ", value));
@@ -205,7 +218,10 @@ cmd_entry(cmd_arg_t *cmd_arg, int do_flag)
 	}
 
 	if (cmd_str[0]) {
-		exec_system_cmd(cmd_str, 0);
+		if (wildcard > 0 || pipe_rdr > 0) 
+			exec_system_cmd(cmd_str, SH_CMD_EXEC);
+		else
+			exec_system_cmd(cmd_str, COMMON_EXEC);
 	}
 
 	return 0;
@@ -263,7 +279,7 @@ reg_jsh_cmd(char *syntax)
 	}
 
 	/* Create a syntax tree if it is a new command */
-	if (get_cmd_tree(argv[0], ALL_VIEW_MASK, DO_FLAG, &ct) != 1) {
+	if (!(ct = get_cmd_tree(argv[0]))) {
 		if (!get_man_desc(argv[0], desc, sizeof(desc))) {
 			snprintf(desc, sizeof(desc), "System %s command", argv[0]);
 		}
@@ -448,7 +464,7 @@ auth_scp_exec(char *arg)
 	/* Only "scp -f" or "scp -t" is acceptible */
 	if (strncmp(arg, "scp -f ", 7) != 0 &&
 	    strncmp(arg, "scp -t ", 7) != 0) {
-		syslog(LOG_WARNING, "Not scp: '%s'", arg);
+		syslog(LOG_WARNING, "Invalid scp: '%s'", arg);
 		goto err_out;
 	}
 	if (!*(ptr = arg + 7)) {
@@ -491,9 +507,9 @@ main(int argc, char **argv)
 
 		if ((sftp_server = get_sftp_server()) &&
 		    strcmp(argv[2], sftp_server) == 0)
-			res = exec_system_cmd(argv[2], 1);
+			res = exec_system_cmd(argv[2], JAILED_EXEC);
 		else if ((res = auth_scp_exec(argv[2])) == 0)
-			res = exec_system_cmd(argv[2], 0);
+			res = exec_system_cmd(argv[2], COMMON_EXEC);
 		goto out;
 	}
 
