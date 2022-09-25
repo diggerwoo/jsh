@@ -40,7 +40,7 @@
  * Exec external commands
  */
 int
-exec_system_cmd(char *cmd, int jmode)
+exec_system_cmd(char *cmd, int mode)
 {
 	pid_t	pid;
 	int	argc = 0;
@@ -48,36 +48,44 @@ exec_system_cmd(char *cmd, int jmode)
 	int	status, res = 0;
 
 	if (!cmd || !cmd[0]) return -1;
-	syslog(LOG_DEBUG, "exec [%s] jmode [%d]", cmd, jmode);
+	syslog(LOG_DEBUG, "exec [%s] mode [%d]", cmd, mode);
 
-	if ((argc = get_argv(cmd, &argv, NULL)) <= 0) {
-		fprintf(stderr, "exec_system_cmd: bad args");
-		return -1;
+	if (mode != SH_CMD_EXEC) {
+		if ((argc = get_argv(cmd, &argv, NULL)) <= 0) {
+			fprintf(stderr, "exec_system_cmd: bad args");
+			return -1;
+		}
 	}
 
 	if ((pid = fork()) == 0) {
 		ocli_rl_exit();
-		signal(SIGINT, SIG_DFL);
 
-		if (jmode == 1) {
-			ptrace(PTRACE_TRACEME, 0, NULL, NULL);
+		if (mode == SH_CMD_EXEC) {
+			res = execlp("sh", "sh", "-c", cmd, NULL);
+		} else {
+			if (mode == JAILED_EXEC)
+				ptrace(PTRACE_TRACEME, 0, NULL, NULL);
+			res = execvp(argv[0], argv);
 		}
 
-		if (execvp(argv[0], argv) < 0) {
+		if (res < 0) {
 			fprintf(stderr, "exec_system_cmd execvp: %s",
 				strerror(errno));
-			free_argv(argv);
+			if (argv) free_argv(argv);
                         exit(-1);
 		}
 
 	} else if (pid != -1) {
-		if (jmode == 1) {
+		if (mode == JAILED_EXEC) {
 			if (jtrace(pid, argc, argv) == 0)
 				goto out;
 		}
 		if ((res = waitpid(pid, &status, 0)) < 0)
 			fprintf(stderr, "exec_system_cmd waitpid: %s",
 				strerror(errno));
+		/* New line if child process terminated by signals */
+		if (WIFSIGNALED(status))
+			printf("\n");
 	} else {
 		fprintf(stderr, "exec_system_cmd fork: %s",
 			strerror(errno));
@@ -85,7 +93,7 @@ exec_system_cmd(char *cmd, int jmode)
 	}
 
 out:
-	free_argv(argv);
+	if (argv) free_argv(argv);
 	return res;
 }
 
