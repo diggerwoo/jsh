@@ -41,6 +41,13 @@
 
 #include "jsh.h"
 
+#if !defined(__x86_64__)
+#define orig_rax orig_eax
+#define rax eax
+#define rdi ebx
+#define rsi ecx
+#endif
+
 #define FFLAG(f, x) ((f & x) == x)
 
 static int jtrace_sftp_server(pid_t pid, int argc, char **argv);
