@@ -23,7 +23,11 @@
 #include <sys/types.h>
 #include <ocli/ocli.h>
 
-#define _JSH_VERSION_	"jsh 0.97"
+#if !defined(OCLI_VERSION_CODE) || OCLI_VERSION_CODE < OCLI_VERSION(0,91)
+#  error "Libocli Version >= 0.91 is needed."
+#endif
+
+#define JSH_VERSION	"jsh 0.98"
 
 extern char *home_dir;
 extern char *sftp_server;
@@ -41,7 +45,12 @@ extern int is_path(char *str);
 extern int is_captical_word(char *str);
 extern int mylex_init(void);
 
-extern int exec_system_cmd(char *cmd, int jmode);
+/* Mode of exec */
+#define COMMON_EXEC	0
+#define SH_CMD_EXEC	1
+#define JAILED_EXEC	2
+extern int exec_system_cmd(char *cmd, int mode);
+
 extern char *get_man_desc(char *cmd, char *desc, int len);
 
 extern char *get_basename(char *path);
