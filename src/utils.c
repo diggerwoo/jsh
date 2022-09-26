@@ -82,9 +82,9 @@ exec_system_cmd(char *cmd, int mode)
 		}
 		if ((res = waitpid(pid, &status, 0)) < 0)
 			syslog(LOG_ERR, "waitpid %d [%s] = %d: %s",
-				pid, argv[0], res, strerror(errno));
+				pid, cmd, res, strerror(errno));
 		/* Better zero output and return 0 on success for scp */
-		if (strcmp(argv[0], "scp") == 0) {
+		if (argv && argv[0] && strcmp(argv[0], "scp") == 0) {
 			if (res >= 0) res = 0;
 			goto out;
 		}
