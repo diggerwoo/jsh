@@ -5,9 +5,9 @@ JSH 是一个适用于 Linux 平台的 Jailed Shell 工具，部署 JSH 并不�
 
 如果应用场景如下，那么 JSH 可能是适合你的：
 - 需要限定某一组或某个用户，只能访问有限的 Linux 命令，甚至命令选项也是限定的，比如：只能 ssh 到某几台指定的主机
-- 需要限定 sftp 或 scp 只能访问自己的 HOME 目录，以及指定的公共目录
-  > SFTP 的 HOME Jail 是基于 ptrace 实现的，目前只在 X86_64 平台测试通过
-- 主机环境不需要这些用户做相对复杂的 shell 操作，诸如管道过滤、重定向等等
+- 受限用户 sftp 或 scp 时只能访问自己的 HOME 目录，以及指定的公共目录
+  > SFTP 的 HOME Jail 是基于 ptrace 系统调用实现的，目前只在 X86_64 平台测试通过
+- 主机环境不需要受限用户做相对复杂的 shell 语法操作，但可能需要支持基本的管道过滤、重定向操作
 
 部署 JSH 需要的步骤：
 1. 编译和安装 jsh ，注意 jsh 依赖 [libocli](https://github.com/diggerwoo/libocli)，需要先编译安装 libocli
@@ -34,7 +34,7 @@ jsh 配置设计为以组文件优先，即先尝试加载组配置文件，再�
 配置文件说明详见 [第 4 节](#4-配置文件说明)。
 
 在 [group.jailed.conf](conf/group.jailed.conf) 这个例子里，我们允许 jailed 组用户：
-- 执行 id, pwd, passwd, ls, vim, ping, ssh 这几个命令.
+- 执行 id, pwd, passwd, ls, vim, mkdir, rm, ping, ssh, grep 这几个命令，其中允许 grep 输出分页或重定向。
 - 使用 scp 访问自己 HOME 目录，以及 /home/public 这个公共目录，做上传下载。
 
 ```sh
@@ -42,8 +42,10 @@ jsh 配置设计为以组文件优先，即先尝试加载组配置文件，再�
 env SCPEXEC=1
 env SCPDIR=/home/public
 
-# ls 别名
-alias ls "ls -a"
+# ls 别名，增加隐藏文件输出选项，和彩色输出选项
+alias ls "ls -a --color=auto"
+# grep 别名，增加彩色输出选项
+alis grep "grep --color=auto"
 
 # 允许的命令语法
 id
@@ -56,6 +58,11 @@ rm [ -rf ] PATH
 vim [ PATH ]
 ping [ -c INT ] { IP_ADDR | DOMAIN_NAME }
 ssh NET_UID
+
+# 允许 grep 结果分页输出，或重定向到文件
+grep [ -v ] WORDS PATH
+grep [ -v ] WORDS PATH | more
+grep [ -v ] WORDS PATH > PATH
 ```
 
 ## 3. 修改用户的组和 shell 属性
@@ -136,12 +143,12 @@ rmdir PATH
 - 多选一段落 **{ }** 之内不允许再嵌套任何 **[ ]** 或 **{ }**
 - 可选项段落 **[ ]** 内允许嵌套一层多选一 **{ }**，比如 " [ -c { 5 | 10 | 100 } ] "
 
-例如，允许用户使用 ping IP 地址或域名，允许用户使用 -c 选项选择报文发送次数为 5、10 或 100个
+例一，允许用户使用 ping IP 地址或域名，允许用户使用 -c 选项选择报文发送次数为 5、10 或 100个
 ```
 ping [ -c { 5 | 10 | 100 } ] { IP_ADDR | DOMAIN_NAME }
 ```
 
-例如，只允许用户 ssh 使用 admin 身份登录 192.168.1.1 ，或使用 guest 身份登录 192.168.1.3 ：
+例二，只允许用户 ssh 使用 admin 身份登录 192.168.1.1 ，或使用 guest 身份登录 192.168.1.3 ：
 ```
 ssh { admin@192.168.1.1 | guest@192.168.1.3 }
 ```
