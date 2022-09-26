@@ -8,10 +8,10 @@ If the application scenario is as follows, then JSH may be suitable for you:
 - Need to limit certain groups or certain users to only access limited Linux commands, and even command options are limited. E.g. ssh to limited range of hosts.
 - Need to restrict user sftp or scp to only access their own HOME directory, as well as the specified public directory.
   > The HOME Jail of SFTP is implemented based on ptrace. It works on X86_64 but has not been tested on i386.
-- The host environment does not require these users to do relatively complex shell operations, such as pipe filtering, redirection, etc.
+- The host environment does not require these users to do relatively complex shell operations, but the basic pipe filtering or file redirection might be needed.
 
 Key steps required to deploy JSH:
-1. Compile and install jsh, note that jsh depends on [libocli](https://github.com/diggerwoo/libocli), you need to compile and install libocli first.
+1. Compile and install jsh, note that jsh depends on [libocli](https://github.com/diggerwoo/libocli), you need to compile and install libocli first.  (Current jsh version needs libocli 0.91).
 2. Edit the configuration file for specific group or user, to include all the limited commands.
 3. Edit /etc/passwd, or usermod -s /usr/local/bin/jsh -g <limited_group> to change the user's shell and group.
 
@@ -41,8 +41,9 @@ In the sample configuration [group.jailed.conf](conf/group.jailed.conf), we allo
 env SCPEXEC=1
 env SCPDIR=/home/public
 
-# Alias settings
-alias ls "ls -a"
+# Alias settings for ls and grep, with colored output enabled
+aias ls "ls -a --color=auto"
+alis grep "grep --color=auto"
 
 # Allowed commands
 id
@@ -55,6 +56,11 @@ rm [ -rf ] PATH
 vim [ PATH ]
 ping [ -c INT ] { IP_ADDR | DOMAIN_NAME }
 ssh NET_UID
+
+# Allow grep output to be paged or redirected.
+grep [ -v ] WORDS PATH
+grep [ -v ] WORDS PATH | more
+grep [ -v ] WORDS PATH > PATH
 ```
 
 ## 3. Change user shell and group

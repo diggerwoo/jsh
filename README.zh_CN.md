@@ -4,15 +4,15 @@
 JSH 是一个适用于 Linux 平台的 Jailed Shell 工具，部署 JSH 并不需要复杂的 docker 或 chroot 配置，只需要一个可执行 jsh 文件，以及一个或若干简单的配置文件。
 
 如果应用场景如下，那么 JSH 可能是适合你的：
-- 需要限定某一组或某个用户，只能访问有限的 Linux 命令，甚至命令选项也是限定的，比如：只能 ssh 到某几台指定的主机
-- 需要限定 sftp 或 scp 只能访问自己的 HOME 目录，以及指定的公共目录
-  > SFTP 的 HOME Jail 是基于 ptrace 实现的，目前只在 X86_64 平台测试通过
-- 主机环境不需要这些用户做相对复杂的 shell 操作，诸如管道过滤、重定向等等
+- 需要限定某一组或某个用户，只能访问有限的 Linux 命令，甚至命令选项也是限定的，比如：只能 ssh 到某几台指定的主机。
+- 受限用户 sftp 或 scp 时只能访问自己的 HOME 目录，以及指定的公共目录。
+  > SFTP 的 HOME Jail 是基于 ptrace 系统调用实现的，目前只在 X86_64 平台测试通过。
+- 主机环境不需要受限用户做相对复杂的 shell 语法操作，但可能需要支持基本的管道过滤、重定向操作。
 
 部署 JSH 需要的步骤：
-1. 编译和安装 jsh ，注意 jsh 依赖 [libocli](https://github.com/diggerwoo/libocli)，需要先编译安装 libocli
-2. 编辑用户组或用户的命令配置文件
-3. 编辑 /etc/passwd，或者 usermod -s /usr/local/bin/jsh -g <受限用户组> 改变用户的 shell 和 group 属性
+1. 编译和安装 jsh ，注意 jsh 依赖 [libocli](https://github.com/diggerwoo/libocli)，需要先编译安装 libocli （目前版本要求更新至 libocli 0.91）。
+2. 编辑用户组或用户的命令配置文件。
+3. 编辑 /etc/passwd，或者 usermod -s /usr/local/bin/jsh -g <受限用户组> 改变用户的 shell 和 group 属性。
 
 之后用户再登录就会进入一个命令受限的 shell 环境，所能访问的命令就是上面第 2 步配置文件里所指定的。
 
@@ -34,7 +34,7 @@ jsh 配置设计为以组文件优先，即先尝试加载组配置文件，再�
 配置文件说明详见 [第 4 节](#4-配置文件说明)。
 
 在 [group.jailed.conf](conf/group.jailed.conf) 这个例子里，我们允许 jailed 组用户：
-- 执行 id, pwd, passwd, ls, vim, ping, ssh 这几个命令.
+- 执行 id, pwd, passwd, ls, vim, mkdir, rm, ping, ssh, grep 这几个命令，其中允许 grep 输出分页或重定向。
 - 使用 scp 访问自己 HOME 目录，以及 /home/public 这个公共目录，做上传下载。
 
 ```sh
@@ -42,8 +42,10 @@ jsh 配置设计为以组文件优先，即先尝试加载组配置文件，再�
 env SCPEXEC=1
 env SCPDIR=/home/public
 
-# ls 别名
-alias ls "ls -a"
+# ls 别名，增加隐藏文件输出选项，和彩色输出选项
+alias ls "ls -a --color=auto"
+# grep 别名，增加彩色输出选项
+alias grep "grep --color=auto"
 
 # 允许的命令语法
 id
@@ -56,12 +58,17 @@ rm [ -rf ] PATH
 vim [ PATH ]
 ping [ -c INT ] { IP_ADDR | DOMAIN_NAME }
 ssh NET_UID
+
+# 允许 grep 结果分页输出，或重定向到文件
+grep [ -v ] WORDS PATH
+grep [ -v ] WORDS PATH | more
+grep [ -v ] WORDS PATH > PATH
 ```
 
 ## 3. 修改用户的组和 shell 属性
 
 以 jailuser 为例，将用户改变到 jailed 组，指定 login shell 为 jsh：
-> 注意使用 usermod 前，需要将 /usr/local/bin/jsh 加入到 /etc/shells
+> 注意使用 usermod 前，需要将 /usr/local/bin/jsh 加入到 /etc/shells 。
 ```
 usermod -g jailed -s /usr/local/bin/jsh jailuser
 ```
@@ -87,10 +94,10 @@ env LANG=en_US.UTF-8
 配置文件中不需要定义 PATH 环境变量，jsh 启动时会自动设置 PATH=/bin:/sbin/:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin ，可确保查找到大多数 Linux 常用命令。
 
 jsh 自定义了与 scp 相关的两个环境变量：  
- - SCPEXEC 设置为 1 或 TRUE 时，允许用户使用 sftp 后 scp 传文件
- - SCPDIR  设置用户除 HOME 目录之外可访问的目录，用冒号可隔离多个目录
- - SCP_SERVER 设置 sftp-server 路径，默认为 /usr/libexec/openssh/sftp-server，若所在系统 sftp-server 的路径与此不一致，则需要手工配置此环境变量，路径与 ssh_config 文件中的 subsystem sftp 指定的 sftp-server 路径相同
- > 注意 sshd_config 文件中的 subsystem sftp 不能配置为 internal-sftp，internal-sftp 无法与 jsh 配合实现 HOME 目录访问限制
+ - SCPEXEC 设置为 1 或 TRUE 时，允许用户使用 sftp 后 scp 传文件。
+ - SCPDIR  设置用户除 HOME 目录之外可访问的目录，用冒号可隔离多个目录。
+ - SCP_SERVER 设置 sftp-server 路径，默认为 /usr/libexec/openssh/sftp-server，若所在系统 sftp-server 的路径与此不一致，则需要手工配置此环境变量，路径与 ssh_config 文件中的 subsystem sftp 指定的 sftp-server 路径相同。
+ > 注意 sshd_config 文件中的 subsystem sftp 不能配置为 internal-sftp，internal-sftp 无法与 jsh 配合实现 HOME 目录访问限制。
 
 比如：  
 ```
@@ -136,12 +143,12 @@ rmdir PATH
 - 多选一段落 **{ }** 之内不允许再嵌套任何 **[ ]** 或 **{ }**
 - 可选项段落 **[ ]** 内允许嵌套一层多选一 **{ }**，比如 " [ -c { 5 | 10 | 100 } ] "
 
-例如，允许用户使用 ping IP 地址或域名，允许用户使用 -c 选项选择报文发送次数为 5、10 或 100个
+例一，允许用户使用 ping IP 地址或域名，允许用户使用 -c 选项选择报文发送次数为 5、10 或 100个：
 ```
 ping [ -c { 5 | 10 | 100 } ] { IP_ADDR | DOMAIN_NAME }
 ```
 
-例如，只允许用户 ssh 使用 admin 身份登录 192.168.1.1 ，或使用 guest 身份登录 192.168.1.3 ：
+例二，只允许用户 ssh 使用 admin 身份登录 192.168.1.1 ，或使用 guest 身份登录 192.168.1.3 ：
 ```
 ssh { admin@192.168.1.1 | guest@192.168.1.3 }
 ```
