@@ -81,8 +81,13 @@ exec_system_cmd(char *cmd, int mode)
 				goto out;
 		}
 		if ((res = waitpid(pid, &status, 0)) < 0)
-			fprintf(stderr, "exec_system_cmd waitpid: %s",
-				strerror(errno));
+			syslog(LOG_ERR, "waitpid %d [%s] = %d: %s",
+				pid, argv[0], res, strerror(errno));
+		/* Better zero output and return 0 on success for scp */
+		if (strcmp(argv[0], "scp") == 0) {
+			if (res >= 0) res = 0;
+			goto out;
+		}
 		/* New line if child process terminated by signals */
 		if (WIFSIGNALED(status))
 			printf("\n");
