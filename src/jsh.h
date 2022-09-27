@@ -27,13 +27,15 @@
 #  error "Libocli Version >= 0.91 is needed."
 #endif
 
-#define JSH_VERSION	"jsh 0.98"
+#define JSH_VERSION	"jsh 0.99"
 
 extern char *home_dir;
 extern char *sftp_server;
 
 /* Default jsh configuration directory */
 #define JSH_CONF_DIR	"/usr/local/etc/jsh.d"
+#define JSH_MAN_CONF	"/usr/local/etc/jsh.d/man.conf"
+
 #define SFTP_SERVER	"/usr/libexec/openssh/sftp-server"
 
 #define LEX_PATH	LEX_CUSTOM_TYPE(0)
@@ -52,6 +54,7 @@ extern int mylex_init(void);
 extern int exec_system_cmd(char *cmd, int mode);
 
 extern char *get_man_desc(char *cmd, char *desc, int len);
+extern char *get_man_opt_desc(char *cmd, char *opt, char *desc, int len);
 
 extern char *get_basename(char *path);
 extern char *get_abs_dir(char *path, char *abs_dir, int len, int full);
@@ -60,5 +63,10 @@ extern int in_scp_homes(char *ent);
 #define in_sftp_homes(x) in_scp_homes(x)
 
 extern int jtrace(pid_t pid, int argc, char **argv);
+
+extern int jsh_man_init(void);
+extern void jsh_man_exit(void);
+
+extern void jsh_exit(void);
 
 #endif	/* _JSH_H */
