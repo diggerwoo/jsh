@@ -34,7 +34,6 @@
 #include <sys/ptrace.h>
 
 #include "jsh.h"
-#include "man.h"
 
 /*
  * Exec external commands
@@ -58,7 +57,7 @@ exec_system_cmd(char *cmd, int mode)
 	}
 
 	if ((pid = fork()) == 0) {
-		ocli_rl_exit();
+		jsh_exit();
 
 		if (mode == SH_CMD_EXEC) {
 			res = execlp("sh", "sh", "-c", cmd, NULL);
@@ -100,34 +99,6 @@ exec_system_cmd(char *cmd, int mode)
 out:
 	if (argv) free_argv(argv);
 	return res;
-}
-
-/*
- * Get man description line from auto generated man[] array in man.h
- */
-char *
-get_man_desc(char *cmd, char *desc, int len)
-{
-	struct man *ptr;
-	int	n = 0;
-
-	if (!cmd || !cmd[0] || !desc || len < 8) return NULL;
-	if ((n = (sizeof(man) / sizeof(struct man))) < 2) return NULL;
-
-	bzero(desc, len);
-	ptr = &man[0];
-
-	while (ptr->cmd && ptr->cmd[0] && n > 0) {
-		if (strcmp(cmd, ptr->cmd) == 0) {
-			if (ptr->desc && ptr->desc[0]) {
-				snprintf(desc, len, "%s", ptr->desc);
-				desc[0] = toupper(desc[0]);
-			}
-			break;
-		}
-		ptr++; n--;
-	}
-	return ((desc[0]) ? desc : NULL);
 }
 
 /*
