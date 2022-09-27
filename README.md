@@ -195,7 +195,7 @@ When typing ‘?’, jsh prompts for command usage. But for command options, suc
   <Enter>                - End of command
 ```
 
-If you need more friendly prompts, you need to configure the /usr/local/etc/jsh.d/man.conf. This configuration of man.conf is very simple. Please refer to [man.conf](conf/man.conf).
+If you need more friendly prompts, you need to configure the /usr/local/etc/jsh.d/man.conf. The configuration of man.conf is very simple. Please refer to [man.conf](conf/man.conf).
 For example, configure the prompt of '-l' option of command 'ls':
 ```
 ls
