@@ -35,10 +35,10 @@ jsh 配置设计为以组文件优先，即先尝试加载组配置文件，再�
 
 在 [group.jailed.conf](conf/group.jailed.conf) 这个例子里，我们允许 jailed 组用户：
 - 执行 id, pwd, passwd, ls, vim, mkdir, rm, ping, ssh, grep 这几个命令，其中允许 grep 输出分页或重定向。
-- 使用 scp 访问自己 HOME 目录，以及 /home/public 这个公共目录，做上传下载。
+- 使用 sftp 和 scp 访问自己 HOME 目录，以及 /home/public 这个公共目录，做上传下载。
 
 ```sh
-# 允许 scp 传文件，除了 HOME，允许 scp 访问 /home/public
+# 允许 sftp 和 scp 传文件，除了 HOME，允许访问 /home/public
 env SCPEXEC=1
 env SCPDIR=/home/public
 
