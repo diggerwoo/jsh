@@ -185,3 +185,27 @@ Other infrequently used lexical types are as follows.
 | MAC_ADDR | MAC address |
 | EMAIL_ADDR | EMail address |
 
+### 4.5 Improve command option prompt
+
+When typing ‘?’, jsh prompts for command usage. But for command options, such as the -l option of ls, the prompt is empty.
+```
+[centos71 jailuser]> ls
+  -l                     -
+  Path name              - Path name
+  <Enter>                - End of command
+```
+
+If you need more friendly prompts, you need to configure the /usr/local/etc/jsh.d/man.conf. This configuration of man.conf is very simple. Please refer to [man.conf](conf/man.conf).
+For example, configure the prompt of '-l' option of command 'ls':
+```
+ls
+  -l            "use a long listing format"
+```
+
+After saving the configuration and log in again, type '?' after ‘ls ’, and you will get the following prompt, which is obviously much more friendly:
+```
+[centos71 jailuser]> ls
+  -l                     - Use a long listing format
+  Path name              - Path name
+  <Enter>                - End of command
+```
