@@ -187,3 +187,29 @@ ssh { admin@192.168.1.1 | guest@192.168.1.3 }
 | MAC_ADDR | MAC 地址 |
 | EMAIL_ADDR | EMAIL 地址 |
 
+### 4.5 改进命令选项提示信息
+
+当键入 ? 时，jsh 会提示命令用法，但对于命令的选项，比如 ls 的 -l 选项，提示是空的。
+```
+[centos71 jailuser]> ls
+  -l                     -
+  Path name              - Path name
+  <Enter>                - End of command
+```
+
+如果需要更友好的提示，那么需要额外去配置 /usr/local/etc/jsh.d/man.conf，这个配置文件很简单，关键字单独一行，之后跟随一个或多个缩进的选项行（空格或TAB缩进都可以），参见范例 [man.conf](conf/man.conf)。
+比如在 man.conf 中配置了 -l 的提示后：
+```
+ls
+  -l            "use a long listing format"
+```
+
+保存配置后重登录，再 ls 后键入 '?' ，会得到如下提示，显然友好很多：
+
+```
+[centos71 jailuser]> ls
+  -l                     - Use a long listing format
+  Path name              - Path name
+  <Enter>                - End of command
+```
+
