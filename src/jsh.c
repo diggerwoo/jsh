@@ -300,7 +300,10 @@ reg_jsh_cmd(char *syntax)
 			} else
 				add_cmd_var(ct, argv[i], NULL, arg_type[i], argv[i]);
 		} else {
-			add_cmd_key_arg(ct, argv[i], NULL, ARG(OPT));
+			add_cmd_key_arg(ct, argv[i],
+					get_man_opt_desc(argv[0], argv[i], desc, sizeof(desc)) ?
+						desc : NULL,
+					ARG(OPT));
 		}
 	}
 
@@ -352,6 +355,7 @@ jsh_init()
 	struct stat	stat_buf;
 	char	path[64], env_str[80];
 
+	jsh_man_init();
 	mylex_init();
 
 	/* Builtin exit & cd commands */
@@ -408,6 +412,16 @@ jsh_init()
 
 	load_history();
 	return 0;
+}
+
+/*
+ * Cleanup jsh resources
+ */
+void
+jsh_exit()
+{
+	ocli_rl_exit();
+	jsh_man_exit();
 }
 
 /*
@@ -521,6 +535,6 @@ main(int argc, char **argv)
 	ocli_rl_loop();
 	save_history();
 out:
-	ocli_rl_exit();
+	jsh_exit();
 	return res;
 }
