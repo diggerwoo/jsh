@@ -10,6 +10,7 @@ BIN = /usr/local/bin
 ETC = /usr/local/etc
 JSHDIR = $(ETC)/jsh.d
 SAMPLE = group.jailed.conf
+MANCONF = man.conf
 
 CFLAGS := -O2 -Wall -Wno-unused-but-set-variable -g $(INC)
 CC := gcc
@@ -19,7 +20,7 @@ CP := cp -rf
 
 default: jsh
 
-OBJS =	$(SRC)/jsh.o $(SRC)/utils.o $(SRC)/mylex.o $(SRC)/jtrace.o
+OBJS =	$(SRC)/jsh.o $(SRC)/utils.o $(SRC)/mylex.o $(SRC)/jtrace.o $(SRC)/man.o
 
 jsh: $(OBJS)
 	$(CC) -o $@ $^ /usr/local/lib/libocli.a -lpcre -lreadline
@@ -32,7 +33,12 @@ man.h:
 
 install:
 	install -m 755 -o root -g root jsh $(BIN)
-	install -m 644 -o root -g root -b -D conf/$(SAMPLE) $(JSHDIR)/$(SAMPLE)
+ifeq ($(wildcard $(JSHDIR)/$(SAMPLE)),)
+	install -m 644 -o root -g root -D conf/$(SAMPLE) $(JSHDIR)/$(SAMPLE)
+endif
+ifeq ($(wildcard $(JSHDIR)/$(MANCONF)),)
+	install -m 644 -o root -g root -D conf/$(MANCONF) $(JSHDIR)/$(MANCONF)
+endif
 
 clean:
 	$(RM) jsh $(SRC)/*.o
