@@ -91,6 +91,8 @@ env LANG=en_US.UTF-8
 
 There is no need to define the env PATH. When jsh starts it sets "PATH=/bin:/sbin/:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin" to make sure that it can find most of common commands of Linux.
 
+If an env is defined multiple times, the latest one will take precedence. So if an env of group configuration is redefined in specific user configuration, the one in the user configuration will take precedence when this user logs in.
+
 There are two internal env vars defined by jsh：  
  - SCPEXEC, set 1 or TRUE if users/groups are allowed to use sftp and scp.
  - SCPDIR, defines accessible directories other than user's home directory. Multi directory shoud be separated by ':'.
@@ -110,11 +112,14 @@ The keyword "alias" is used to define alias of commands. Note that double quotat
 ```
 alias <keyword> ”<expanded command>"
 ```
+Similar to the env definition, the last one takes precedence if same alias keyword is defined multiple times.
+
 For example:
 ```
 alias ls "ls -a"
 ```
-The “vi” and “vim” has been aliased as "vim -Z" by jsh, to avoid user executing external Linux commands inside vim.
+
+The “vi” and “vim” has been internaly aliased as "vim -Z" by jsh, to avoid user executing external Linux commands inside vim.
 
 ### 4.3 Add permitted command syntaxes
 
