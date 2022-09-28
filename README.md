@@ -195,14 +195,14 @@ When typing ‘?’, jsh prompts for command usage. But for command options, suc
   <Enter>                - End of command
 ```
 
-If you need more friendly prompts, you need to configure the /usr/local/etc/jsh.d/man.conf. The configuration of man.conf is very simple. Please refer to [man.conf](conf/man.conf).
+If you need more friendly prompts, you can configure the /usr/local/etc/jsh.d/man.conf. The line format of man.conf is straitforward, with each line having two elements: keyword/option and manual text. Keyword lines start without any spaces whilst option lines start with space/TAB indent. Please refer to [man.conf](conf/man.conf).
 For example, configure the prompt of '-l' option of command 'ls':
 ```
 ls
   -l            "use a long listing format"
 ```
 
-After saving the configuration and log in again, type '?' after ‘ls ’, and you will get the following prompt, which is obviously much more friendly:
+After saving the configuration and log in again, type '?' after ‘ls ’ then you will get the following prompt which is obviously much more user-friendly:
 ```
 [centos71 jailuser]> ls
   -l                     - Use a long listing format
