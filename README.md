@@ -195,7 +195,7 @@ When typing ‘?’, jsh prompts for command usage. But for command options, suc
   <Enter>                - End of command
 ```
 
-If you need more friendly prompts, you can configure the /usr/local/etc/jsh.d/man.conf. The line format of man.conf is straitforward, with each line having two elements: keyword/option and manual text. The keyword line starts without any spaces and the manual text are optional, whilst the option line starts with space/TAB and manual text is madatory. Please refer to [man.conf](conf/man.conf).
+If you need more friendly prompts, you can configure the /usr/local/etc/jsh.d/man.conf. The line format of man.conf is straitforward, with each line having two elements: keyword/option and manual text. The keyword line starts without any spaces and the manual text is optional, whilst the option line starts with space/TAB and manual text is madatory. Please refer to [man.conf](conf/man.conf).
 For example, configure the prompt of '-l' option of command 'ls':
 ```
 ls
