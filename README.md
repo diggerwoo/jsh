@@ -188,22 +188,22 @@ Other infrequently used lexical types are as follows.
 ### 4.5 Improve command option prompt
 
 When typing ‘?’, jsh prompts for command usage. But for command options, such as the -l option of ls, the prompt is empty.
-```
+```sh
 [centos71 jailuser]> ls
   -l                     -
   Path name              - Path name
   <Enter>                - End of command
 ```
 
-If you need more friendly prompts, you can configure the /usr/local/etc/jsh.d/man.conf. The line format of man.conf is straitforward, with each line having two elements: keyword/option and manual text. Keyword lines start without any spaces whilst option lines start with space/TAB indent. Please refer to [man.conf](conf/man.conf).
+If you need more friendly prompts, you can configure the /usr/local/etc/jsh.d/man.conf. The line format of man.conf is straitforward, with each line having two elements: keyword/option and manual text. The keyword line starts without any spaces and the manual text are optional, whilst the option line starts with space/TAB and manual text is madatory. Please refer to [man.conf](conf/man.conf).
 For example, configure the prompt of '-l' option of command 'ls':
-```
+```sh
 ls
   -l            "use a long listing format"
 ```
 
 After saving the configuration and log in again, type '?' after ‘ls ’ then you will get the following prompt which is obviously much more user-friendly:
-```
+```sh
 [centos71 jailuser]> ls
   -l                     - Use a long listing format
   Path name              - Path name
