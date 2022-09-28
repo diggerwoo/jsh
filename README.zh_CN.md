@@ -93,6 +93,8 @@ env LANG=en_US.UTF-8
 
 配置文件中不需要定义 PATH 环境变量，jsh 启动时会自动设置 PATH=/bin:/sbin/:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin ，可确保查找到大多数 Linux 常用命令。
 
+如果同一个环境变量名被重复多次定义，那么最后一个有效。在用户文件中定义的环境变量优先级高于组文件中的同名环境变量。
+
 jsh 自定义了与 scp 相关的两个环境变量：  
  - SCPEXEC 设置为 1 或 TRUE 时，允许用户使用 sftp 后 scp 传文件。
  - SCPDIR  设置用户除 HOME 目录之外可访问的目录，用冒号可隔离多个目录。
@@ -113,6 +115,9 @@ env SFTP_SERVER=/usr/libexec/openssh/sftp-server
 ```
 alias <首关键字> ”<展开的命令>"
 ```
+
+与环境变量类似，同关键字 alias 重复定义时，最后一个有效。
+
 比如：
 ```
 alias ls "ls -a"
