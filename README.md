@@ -99,7 +99,7 @@ There are two internal env vars defined by jsh：
  - SCP_SERVER, sets the sftp-server path, default is /usr/libexec/openssh/sftp-server. You need to manually configure this if the path is different from your system's. The path should be the same as that specified by ”subsystem sftp“ in the opessh's ssh_config configuration file.
  > Note the "subsystem sftp" in sshd_config cannot be configured as ”internal-sftp“. The internal-sftp cannot work with jsh to implement the HOME directory jail.
  - HOMEJAIL, sets whether the user is restricted to access only the HOME/public directory after logging in with SSH or CONSOLE, enabled by default, disabled when set to 0 or False.
- > When HOMEJAIL is enabled, cd and vim can be restricted inside HOME/public directories. But for other commands, HOMEJAIL is actually achieved by restricting the PATH parameter. That is, the PATH parameter entered by the user cannot reache outside HOME/public directories. If the command parameter is misconfigured, e.g. configuring "ls WORDS" instead of "ls PATH", then the HOMEJAIL of the "ls" will fail. Refer to [section 4.3] (#43-add-permitted-command-syntaxes)
+ > When HOMEJAIL is enabled, cd and vim can be restricted inside HOME/public directories. But for other commands, HOMEJAIL is actually achieved by restricting the PATH parameter. That is, the PATH parameter entered by the user cannot reache outside HOME/public directories. If the command parameter is misconfigured, e.g. configuring "ls WORDS" instead of "ls PATH", then the HOMEJAIL of the "ls" will fail. Refer to [section 4.3](#43-add-permitted-command-syntaxes)
 
 For example:
 ```
