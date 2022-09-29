@@ -35,6 +35,9 @@
 char	*home_dir = NULL;
 char	*sftp_server = SFTP_SERVER;
 
+/* Enable home jailed by default */
+int	home_jailed = 1;
+
 /*
  * Set jsh specific readline prompt
  */
@@ -81,7 +84,13 @@ cmd_cd(cmd_arg_t *cmd_arg, int do_flag)
 			path = value;
 	}
 
-	if (!path || !path[0]) path = home_dir;
+	if (!path || !path[0]) {
+		path = home_dir;
+	} else if (home_jailed && !in_home_dirs(path)) {
+		fprintf(stderr, "Access denied to '%s'\n",
+			value);
+		return -1;
+	}
 
 	if (chdir(path) == 0)
 		jsh_set_prompt();
@@ -170,7 +179,7 @@ get_alias(char *cmd)
 }
 
 /*
- * Univeral callback entry of jailed commands except for cd & exit.
+ * Universal callback entry of jailed commands except for cd & exit.
  */
 int
 cmd_entry(cmd_arg_t *cmd_arg, int do_flag)
@@ -181,6 +190,8 @@ cmd_entry(cmd_arg_t *cmd_arg, int do_flag)
 	char	*ptr, cmd_str[800];
 	int	len, left;
 	int	wildcard = 0, pipe_rdr = 0;
+	int	jailed_exec = 0;
+	struct stat stat_buf;
 
 	bzero(cmd_str, sizeof(cmd_str));
 	ptr = &cmd_str[0];
@@ -189,6 +200,12 @@ cmd_entry(cmd_arg_t *cmd_arg, int do_flag)
 	for_each_cmd_arg(cmd_arg, i, name, value) {
 		/* Only try alias for first CMD arg */
 		if (i == 0 && IS_ARG(name, CMD)) {
+			/* Override jailed exec for vim */
+			if (home_jailed &&
+			    (strcmp(value, "vi") == 0 ||
+			     strcmp(value, "vim") == 0))
+				jailed_exec = 1;
+
 			alias = get_alias(value);
 			if (alias && alias[0])
 				value = alias;
@@ -196,7 +213,13 @@ cmd_entry(cmd_arg_t *cmd_arg, int do_flag)
 
 		/* Wildcard *, pipline |, or rdr > >> present */
 		if (IS_ARG(name, PATH)) {
-			if (strchr(value, '*'))
+			if (home_jailed && !in_home_dirs(value)) {
+				fprintf(stderr, "Access denied to '%s'\n",
+					value);
+				return -1;
+			}
+			if (strchr(value, '*') &&
+			    stat(value, &stat_buf) < 0 && errno == ENOENT)
 				wildcard++;
 		} else if (IS_ARG(name, OPT)) {
 			if (strcmp(value, "|") == 0 ||
@@ -218,7 +241,9 @@ cmd_entry(cmd_arg_t *cmd_arg, int do_flag)
 	}
 
 	if (cmd_str[0]) {
-		if (wildcard > 0 || pipe_rdr > 0) 
+		if (jailed_exec) 
+			exec_system_cmd(cmd_str, JAILED_EXEC);
+		else if (wildcard > 0 || pipe_rdr > 0) 
 			exec_system_cmd(cmd_str, SH_CMD_EXEC);
 		else
 			exec_system_cmd(cmd_str, COMMON_EXEC);
@@ -353,14 +378,16 @@ jsh_init()
 	struct passwd	*passwd = NULL;
 	struct group	*grp = NULL;
 	struct stat	stat_buf;
-	char	path[64], env_str[80];
+	char	*ptr, path[64], env_str[80];
 
 	jsh_man_init();
 	mylex_init();
 
-	/* Builtin exit & cd commands */
+	/* Builtin exit/quit & cd commands */
 	create_cmd(&cmd_tree, "exit", "Exit jsh", cmd_exit);
 	add_cmd_easily(cmd_tree, "exit", BASIC_VIEW, DO_FLAG);
+	create_cmd(&cmd_tree, "quit", "Exit jsh", cmd_exit);
+	add_cmd_easily(cmd_tree, "quit", BASIC_VIEW, DO_FLAG);
 
 	create_cmd(&cmd_tree, "cd", "Change directory", cmd_cd);
 	add_cmd_var(cmd_tree, "PATH", "Directory", LEX_PATH, ARG(PATH));
@@ -406,10 +433,22 @@ jsh_init()
 	snprintf(env_str, sizeof(env_str), "HOME=%s", home_dir);
 	putenv(strdup(env_str));
 
+	if ((ptr = getenv("HOMEJAIL")) &&
+	    (strcmp(ptr, "0") == 0 || strcasecmp(ptr, "False") == 0)) {
+		home_jailed = 0;
+		syslog(LOG_WARNING, "HOMEJAIL is disabled");
+	} else 
+		syslog(LOG_INFO, "HOMEJAIL enabled on %s", home_dir);
+
 	/* Avoid crontab -e executing external commands */
 	putenv("VISUAL=vim -Z");
 	putenv("EDITOR=vim -Z");
 
+	/* Default aliases to disable vi/vim executing external commands */
+	putenv("alias_vi=vim -Z");
+	putenv("alias_vim=vim -Z");
+
+	chdir(home_dir);
 	load_history();
 	return 0;
 }
@@ -422,23 +461,6 @@ jsh_exit()
 {
 	ocli_rl_exit();
 	jsh_man_exit();
-}
-
-/*
- * Test if dir entry is inside scp HOME dirs
- */
-int
-in_scp_homes(char *ent)
-{
-	char	*dir; 
-
-	if (!ent || !*ent) return 0;
-
-	if (in_subdir(ent, home_dir) ||
-	    ((dir = getenv("SCPDIR")) && in_subdir(ent, dir)))
-		return 1;
-	else
-		return 0;
 }
 
 /*
@@ -458,10 +480,17 @@ scp_enabled()
 static char *
 get_sftp_server()
 {
-	char	*path; 
-	if ((path = getenv("SFTP_SERVER")))
-		return path;
-	else
+	char	*path, *base; 
+	struct stat stat_buf;
+	if ((path = getenv("SFTP_SERVER"))) {
+		base = get_basename(path);
+		if (base && strcmp(base, "sftp-server") == 0 &&
+		    stat(path, &stat_buf) == 0 &&
+		    S_ISREG(stat_buf.st_mode))
+			return path;
+		else
+			return NULL;
+	} else
 		return SFTP_SERVER;
 }
 
@@ -486,7 +515,7 @@ auth_scp_exec(char *arg)
 		goto err_out;
 	}
 
-	if (in_scp_homes(ptr)) return 0;
+	if (in_home_dirs(ptr)) return 0;
 err_out:
 	printf("Unauthorized access, abort\n");
 	return -1;
@@ -504,10 +533,6 @@ main(int argc, char **argv)
 
 	/* Default PATH env to find all executables */
 	putenv("PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin");
-
-	/* Default aliases to disable vi/vim executing external commands */
-	putenv("alias_vi=vim -Z");
-	putenv("alias_vim=vim -Z");
 
 	ocli_rl_init();
 	cmd_manual_init();
