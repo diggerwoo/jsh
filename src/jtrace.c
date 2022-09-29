@@ -18,7 +18,7 @@
  */
 
 /*
- * Currently only support the jailing of sftp-server
+ * Currently only support the jailing of sftp-server and vim
  */
 
 #include <stdio.h>
@@ -51,8 +51,8 @@
 #define FFLAG(f, x) ((f & x) == x)
 
 static int jtrace_sftp_server(pid_t pid, int argc, char **argv);
+static int jtrace_vim(pid_t pid, int argc, char **argv);
 
-static int along_sftp_home(char *ent);
 static char *get_callname(long nr);
 static int jtrace_xlat_flags(int flags, char *buf, int buflen);
 static int jtrace_get_string(pid_t pid, char *addr, char *buf, int buflen);
@@ -63,10 +63,15 @@ static int jtrace_get_string(pid_t pid, char *addr, char *buf, int buflen);
 int
 jtrace(pid_t pid, int argc, char **argv)
 {
-	if (argc >= 1 && argv[0] &&
-	    strcmp(argv[0], sftp_server) == 0) {
+	if (argc < 1 || !argv[0]) return -1;
+
+	if (sftp_server && strcmp(argv[0], sftp_server) == 0) {
 		syslog(LOG_DEBUG, "Start tracing %s", sftp_server);
 		return jtrace_sftp_server(pid, argc, argv);
+
+	} else if (strcmp(argv[0], "vim") == 0) {
+		syslog(LOG_DEBUG, "Start tracing vim");
+		return jtrace_vim(pid, argc, argv);
 	}
 
 	return -1;
@@ -91,7 +96,7 @@ jtrace_sftp_server(pid_t pid, int argc, char **argv)
 	/*
 	 * injail: Set TURE if (lstat/stat/openat, open WR, or
 	 * 		        mkdir/rmdir/link/unlink/rename) called
-	 * incall: Set TURE if in lstat/stat/openat/open syscalls
+	 * incall: Set TURE if in interested syscalls
 	 */
 	int	injail = 0;
 	int	incall = 0;
@@ -161,7 +166,7 @@ jtrace_sftp_server(pid_t pid, int argc, char **argv)
 					 */
 					if (regs.orig_rax == __NR_openat &&
 					    (flags & O_DIRECTORY) == O_DIRECTORY) {
-						if (!along_sftp_home(path_info)) {
+						if (!along_home_dirs(path_info)) {
 							syslog(LOG_DEBUG, "deny %s\n", call_info);
 							regs.orig_rax = -1;
 							if ((res = ptrace(PTRACE_SETREGS, pid, 0, &regs)) < 0) {
@@ -172,7 +177,7 @@ jtrace_sftp_server(pid_t pid, int argc, char **argv)
 							block = 1;
 						}
 					} else {
-						if (!in_sftp_homes(path_info)) {
+						if (!in_home_dirs(path_info)) {
 							syslog(LOG_DEBUG, "deny %s\n", call_info);
 							regs.orig_rax = -1;
 							if ((res = ptrace(PTRACE_SETREGS, pid, 0, &regs)) < 0) {
@@ -219,7 +224,7 @@ jtrace_sftp_server(pid_t pid, int argc, char **argv)
 				 */
 				if (injail) {
 					if (strcmp(path_info, "/etc/localtime") != 0 &&
-					    !along_sftp_home(path_info)) {
+					    !along_home_dirs(path_info)) {
 						regs.rax = -EACCES;
 						if ((res = ptrace(PTRACE_SETREGS, pid, 0, &regs)) < 0) {
 							syslog(LOG_ERR, "jtrace-sftp block %s: %s\n",
@@ -265,8 +270,8 @@ jtrace_sftp_server(pid_t pid, int argc, char **argv)
 				/* limit mkdir/rmdir/unlink/link/rename inside home dirs */
 				if (injail) {
 					block = 0;
-					if (!in_sftp_homes(path_info) ||
-					    (path_dest[0] && !in_sftp_homes(path_dest))) {
+					if (!in_home_dirs(path_info) ||
+					    (path_dest[0] && !in_home_dirs(path_dest))) {
 						syslog(LOG_DEBUG, "deny %s\n", call_info);
 						regs.orig_rax = -1;
 						if ((res = ptrace(PTRACE_SETREGS, pid, 0, &regs)) < 0) {
@@ -302,48 +307,164 @@ jtrace_sftp_server(pid_t pid, int argc, char **argv)
 }
 
 /*
- * Test if dirent is along each other with any home dirs
+ * Jailed tracing for vim
  */
-static int 
-along_sftp_home(char *ent)
+static int
+jtrace_vim(pid_t pid, int argc, char **argv)
 {
-	char	*dir, *path;
-	char	abs_dir[PATH_MAX];
-	char	prefix[PATH_MAX];
-	char	buf[512];
+	struct user_regs_struct regs;
 
-	if (!ent || !*ent) return 0;
+	char	*path;
+	int	flags;
+	char	path_info[256];
+	char	flags_info[64];
+	char	call_info[512];
+	int	status = 0;
+	int	res = 0;
 
-	if (!get_abs_dir(ent, abs_dir, sizeof(abs_dir), 1))
-		return 0;
+	/*
+	 * injail: Set TURE if open("/etc/passwd") called
+	 */
+	int	injail = 0;
+	int	incall = 0;
+	int	block = 0;
 
-	syslog(LOG_DEBUG, "get abs full '%s'=>'%s'\n", ent, abs_dir);
+	bzero(path_info, sizeof(path_info));
 
-	/* along each other with home_dir */
-	if (strncmp(abs_dir, home_dir, strlen(home_dir)) == 0 ||
-	    strncmp(abs_dir, home_dir, strlen(abs_dir)) == 0)
-		return 1;
+	while (1) {
+		ptrace(PTRACE_SYSCALL, pid, NULL, NULL);
 
-	/* along each other with SCPDIR entries */
-	if (!(path = getenv("SCPDIR"))) return 0;
-
-	snprintf(buf, sizeof(buf), "%s", path);
-	dir = strtok(buf, ":");
-	while (dir) {
-		if (!*dir) continue;
-		if (dir[strlen(dir) - 1] != '/')
-			snprintf(prefix, sizeof(prefix), "%s/", dir);
-		else
-			snprintf(prefix, sizeof(prefix), "%s", dir);
-		if (strncmp(abs_dir, prefix, strlen(prefix)) == 0 ||
-		    strncmp(abs_dir, prefix, strlen(abs_dir)) == 0) {
-			return 1;
+		if (waitpid(pid, &status, 0) < 0) {
+			fprintf(stderr, "jtrace-vim waitpid: %s",
+				strerror(errno));
+			return -1;
 		}
-		dir = strtok(NULL, ":");
+		if (WIFEXITED(status)) break;
+
+		if ((res = ptrace(PTRACE_GETREGS, pid, NULL, &regs)) < 0) {
+			syslog(LOG_ERR, "jtrace-vim getregs: %s\n", strerror(errno));
+			break;
+		}
+
+		if (regs.orig_rax == __NR_open || regs.orig_rax == __NR_openat) {
+			if (incall == 0) {
+				incall = 1;
+
+				if (regs.orig_rax == __NR_open) {
+					path = (char *) regs.rdi;
+					flags = regs.rsi;
+				} else {
+					path = (char *) regs.rsi;
+					flags = regs.rdx;
+				}
+
+				jtrace_get_string(pid, path, path_info, sizeof(path_info)-1);
+				jtrace_xlat_flags(flags, flags_info, sizeof(flags_info));
+
+				snprintf(call_info, sizeof(call_info),
+					"%s(\"%s\", %s <0x%x>)",
+					get_callname(regs.orig_rax),
+					path_info[0] ? path_info:"n/a", flags_info, flags);
+
+				if (injail) {
+					block = 0;
+					/* Bypass /usr/share/vim*
+					 */
+					if (strncmp(path_info, "/usr/share/vim", 14) == 0) {
+						syslog(LOG_DEBUG, "bypass %s\n", call_info);
+					} else
+					/*
+					 * Limit opening dirs along with home dirs.
+					 * Limit opening files inside home dirs.
+					 */
+					if (regs.orig_rax == __NR_openat &&
+					    (flags & O_DIRECTORY) == O_DIRECTORY) {
+						if (!along_home_dirs(path_info)) {
+							syslog(LOG_DEBUG, "deny %s\n", call_info);
+							regs.orig_rax = -1;
+							if ((res = ptrace(PTRACE_SETREGS, pid, 0, &regs)) < 0) {
+								syslog(LOG_ERR, "jtrace-vim deny %s: %s\n",
+									call_info, strerror(errno));
+								break;
+							}
+							block = 1;
+						}
+					} else {
+						if (!in_home_dirs(path_info)) {
+							syslog(LOG_DEBUG, "deny %s\n", call_info);
+							regs.orig_rax = -1;
+							if ((res = ptrace(PTRACE_SETREGS, pid, 0, &regs)) < 0) {
+								syslog(LOG_ERR, "jtrace-vim deny %s: %s\n",
+									call_info, strerror(errno));
+								break;
+							}
+							block = 1;
+						}
+					}
+				}
+
+			} else {
+				incall = 0;
+
+				/* Set injail after first opening of /etc/passwd */
+				if (!injail && regs.orig_rax == __NR_open &&
+				    strcmp(path_info, "/etc/passwd") == 0) {
+					injail = 1;
+					syslog(LOG_DEBUG, "injail triggered after %s\n", call_info);
+				}
+
+				syslog(LOG_DEBUG, "%s = %lld\n", call_info, regs.rax);
+			}
+
+		} else if (regs.orig_rax == __NR_stat || regs.orig_rax == __NR_lstat) {
+
+			if (incall == 0) {
+				incall = 1;
+
+				jtrace_get_string(pid, (char *) regs.rdi, path_info, sizeof(path_info)-1);
+				snprintf(call_info, sizeof(call_info),
+					"%s(\"%s\")",
+					get_callname(regs.orig_rax),
+					path_info[0] ? path_info:"n/a");
+
+			} else {
+				incall = 0;
+				/* Bypass /usr/share/vim*
+				 * Limit stat paths along with home dirs.
+				 */
+				if (injail) {
+					if (strncmp(path_info, "/usr/share/vim", 14) == 0) {
+						syslog(LOG_DEBUG, "bypass %s\n", call_info);
+					} else if (!along_home_dirs(path_info)) {
+						regs.rax = -EACCES;
+						if ((res = ptrace(PTRACE_SETREGS, pid, 0, &regs)) < 0) {
+							syslog(LOG_ERR, "jtrace-sftp block %s: %s\n",
+								call_info, strerror(errno));
+							break;
+						}
+						syslog(LOG_DEBUG, "block: %s = %lld\n", call_info, regs.rax);
+					}
+				} else {
+					syslog(LOG_DEBUG, "%s = %lld\n", call_info, regs.rax);
+				}
+			}
+
+		} else if (regs.orig_rax == -1) {
+			incall = 0;
+			if (block) {
+				regs.rax = -EACCES;
+				if ((res = ptrace(PTRACE_SETREGS, pid, 0, &regs)) < 0) {
+					syslog(LOG_ERR, "jtrace-vim redirect %s: %s\n",
+						call_info, strerror(errno));
+					break;
+				}
+				syslog(LOG_DEBUG, "redirect: %s = %lld\n", call_info, regs.rax);
+				block = 0;
+			}
+		}
 	}
-	syslog(LOG_DEBUG, "'%s'=>'%s' is not along with any home dirs\n",
-	       ent, abs_dir);
-	return 0;
+
+	return res;
 }
 
 /*
