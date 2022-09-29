@@ -23,8 +23,8 @@
 #include <sys/types.h>
 #include <ocli/ocli.h>
 
-#if !defined(OCLI_VERSION_CODE) || OCLI_VERSION_CODE < OCLI_VERSION(0,91)
-#  error "Libocli Version >= 0.91 is needed."
+#if !defined(OCLI_VERSION_CODE) || OCLI_VERSION_CODE < OCLI_VERSION(0,92)
+#  error "Libocli Version >= 0.92 is needed."
 #endif
 
 #define JSH_VERSION	"jsh 1.0a"
