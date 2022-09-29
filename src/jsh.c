@@ -279,9 +279,12 @@ reg_jsh_cmd(char *syntax)
 			snprintf(env_str, sizeof(env_str), "alias_%s=%s", argv[1], ptr);
 			putenv(strdup(env_str));
 			syslog(LOG_INFO, "setenv: %s\n", env_str);
+			if (argv) free_argv(argv);
 			return 0;
-		} else
+		} else {
+			if (argv) free_argv(argv);
 			return -1;
+		}
 	}
 
 	/* Set group/user specific env if "env <NAME>=<VALUE>" parsed ok */
@@ -291,6 +294,7 @@ reg_jsh_cmd(char *syntax)
 			putenv(strdup(env_str));
 			syslog(LOG_INFO, "setenv: %s\n", env_str);
 		}
+		if (argv) free_argv(argv);
 		return 0;
 	}
 
@@ -312,6 +316,7 @@ reg_jsh_cmd(char *syntax)
 		create_cmd_arg(&ct, argv[0], desc, ARG(CMD), cmd_entry);
 		if (!ct) {
 			fprintf(stderr, "Failed to create command '%s'\n", argv[0]);
+			if (argv) free_argv(argv);
 			return -1;
 		}
 	}
@@ -339,6 +344,7 @@ reg_jsh_cmd(char *syntax)
 	if (has_path)
 		set_cmd_arg_helper(ct, ARG(PATH), path_helper);
 
+	if (argv) free_argv(argv);
 	return 0;
 }
 
