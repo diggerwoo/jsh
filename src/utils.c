@@ -227,3 +227,65 @@ in_subdir(char *ent, char *path)
 	       abs_dir, path);
 	return 0;
 }
+
+/*
+ * Test if dir entry is inside any HOME dirs
+ */
+int
+in_home_dirs(char *ent)
+{
+	char	*dir; 
+
+	if (!ent || !*ent) return 0;
+
+	if (in_subdir(ent, home_dir) ||
+	    ((dir = getenv("SCPDIR")) && in_subdir(ent, dir)))
+		return 1;
+	else
+		return 0;
+}
+
+/*
+ * Test if dirent is along each other with any home dirs
+ */
+int 
+along_home_dirs(char *ent)
+{
+	char	*dir, *path;
+	char	abs_dir[PATH_MAX];
+	char	prefix[PATH_MAX];
+	char	buf[512];
+
+	if (!ent || !*ent) return 0;
+
+	if (!get_abs_dir(ent, abs_dir, sizeof(abs_dir), 1))
+		return 0;
+
+	syslog(LOG_DEBUG, "get abs full '%s'=>'%s'\n", ent, abs_dir);
+
+	/* along each other with home_dir */
+	if (strncmp(abs_dir, home_dir, strlen(home_dir)) == 0 ||
+	    strncmp(abs_dir, home_dir, strlen(abs_dir)) == 0)
+		return 1;
+
+	/* along each other with SCPDIR entries */
+	if (!(path = getenv("SCPDIR"))) return 0;
+
+	snprintf(buf, sizeof(buf), "%s", path);
+	dir = strtok(buf, ":");
+	while (dir) {
+		if (!*dir) continue;
+		if (dir[strlen(dir) - 1] != '/')
+			snprintf(prefix, sizeof(prefix), "%s/", dir);
+		else
+			snprintf(prefix, sizeof(prefix), "%s", dir);
+		if (strncmp(abs_dir, prefix, strlen(prefix)) == 0 ||
+		    strncmp(abs_dir, prefix, strlen(abs_dir)) == 0) {
+			return 1;
+		}
+		dir = strtok(NULL, ":");
+	}
+	syslog(LOG_DEBUG, "'%s'=>'%s' is not along with any home dirs\n",
+	       ent, abs_dir);
+	return 0;
+}
