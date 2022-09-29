@@ -5,7 +5,7 @@ JSH 是一个适用于 Linux 平台的 Jailed Shell 工具，部署 JSH 并不�
 
 如果应用场景如下，那么 JSH 可能是适合你的：
 - 需要限定某一组或某个用户，只能访问有限的 Linux 命令，甚至命令选项也是限定的，比如：只能 ssh 到某几台指定的主机。
-- 受限用户 sftp 或 scp 时只能访问自己的 HOME 目录，以及指定的公共目录。
+- 受限用户 ssh 或 sftp 登录后，以及 scp 时，都只能访问自己的 HOME 目录，以及指定的公共目录。
   > SFTP 的 HOME Jail 是基于 ptrace 系统调用实现的，目前只在 X86_64 平台测试通过。
 - 主机环境不需要受限用户做相对复杂的 shell 语法操作，但可能需要支持基本的管道过滤、重定向操作。
 
@@ -14,7 +14,7 @@ JSH 是一个适用于 Linux 平台的 Jailed Shell 工具，部署 JSH 并不�
 2. 编辑用户组或用户的命令配置文件。
 3. 编辑 /etc/passwd，或者 usermod -s /usr/local/bin/jsh -g <受限用户组> 改变用户的 shell 和 group 属性。
 
-之后用户再登录就会进入一个命令受限的 shell 环境，所能访问的命令就是上面第 2 步配置文件里所指定的。
+之后用户再登录就会进入一个受限的 shell 环境，所能访问的命令就是上面第 2 步配置文件里所指定的。
 
 ## 1. 编译安装
 ```sh
@@ -35,7 +35,7 @@ jsh 配置设计为以组文件优先，即先尝试加载组配置文件，再�
 
 在 [group.jailed.conf](conf/group.jailed.conf) 这个例子里，我们允许 jailed 组用户：
 - 执行 id, pwd, passwd, ls, vim, mkdir, rm, ping, ssh, grep 这几个命令，其中允许 grep 输出分页或重定向。
-- 使用 sftp 和 scp 访问自己 HOME 目录，以及 /home/public 这个公共目录，做上传下载。
+- 使用 sftp 和 scp 访问自己 HOME 目录和 /home/public 这个公共目录进行文件上传下载。
 
 ```sh
 # 允许 sftp 和 scp 传文件，除了 HOME，允许访问 /home/public
@@ -73,7 +73,7 @@ grep [ -v ] WORDS PATH > PATH
 usermod -g jailed -s /usr/local/bin/jsh jailuser
 ```
 
-之后 jailuser 用户 ssh 或 console 登录后就进入到 jsh ，其执行效果如下。jsh 的使用是类似 Cisco 风格的，敲 ? 提示可访问的命令或词法帮助，敲 TAB 自动补齐关键字或 PATH，jsh 内置的 man 命令可以查看简单语法：
+之后 jailuser 用户 ssh 或 console 登录后就进入到 jsh ，其执行效果如下。jsh 的使用类似 Cisco 风格，敲 ? 提示可访问的命令或词法帮助，敲 TAB 自动补齐关键字或 PATH，jsh 内置的 man 命令可以查看简单语法：
 
  ![image](https://github.com/diggerwoo/blobs/blob/main/img/jsh.gif)
 
@@ -95,11 +95,13 @@ env LANG=en_US.UTF-8
 
 如果同一个环境变量名被重复多次定义，那么最后一个有效。在用户文件中定义的环境变量优先级高于组文件中的同名环境变量。
 
-jsh 自定义了与 scp 相关的两个环境变量：  
+jsh 的内部环境变量如下：  
  - SCPEXEC 设置为 1 或 TRUE 时，允许用户使用 sftp 后 scp 传文件。
  - SCPDIR  设置用户除 HOME 目录之外可访问的目录，用冒号可隔离多个目录。
  - SCP_SERVER 设置 sftp-server 路径，默认为 /usr/libexec/openssh/sftp-server，若所在系统 sftp-server 的路径与此不一致，则需要手工配置此环境变量，路径与 ssh_config 文件中的 subsystem sftp 指定的 sftp-server 路径相同。
  > 注意 sshd_config 文件中的 subsystem sftp 不能配置为 internal-sftp，internal-sftp 无法与 jsh 配合实现 HOME 目录访问限制。
+ - HOMEJAIL 设置用户 SSH 或 CONSOLE 登录后是否被限制只能访问 HOME 目录和公共目录，默认启用，设置为 0 或 False 时禁用。
+ > 启用 HOMEJAIL 时，用户 cd 和 vim 被限制在 HOME 和公共目录内。但对于其它命令，HOMEJAIL 实际上通过限制 PATH 参数来实现的，即用户输入的 PATH 参数不能超出上述目录之外。如果命令参数词法配置错误，比如把 "ls PATH" 设置为 "ls WORDS"，那么会使得 "ls" 命令的 HOMEJAIL 失效。详见[4.3节](#43-增加可执行的命令语法)。
 
 比如：  
 ```
@@ -129,7 +131,7 @@ jsh 内部已经将 vi 和 vim 设置别名 "vim -Z"，即不允许用户在 vim
 注意事项：
 - 命令语法的首关键字必须对应一个可执行的外部命令文件（除非使用 alias 另行指向可执行文件），比如 "logout" 是 bash 内部命令，但系统中并没有 logout 这个可执行文件，那么在配置文件中增加 logout 语法就是无效的。
 - "cd", "exit", "history" 是 jsh 自带的命令关键字，不需要重复添加。
-- 使用小写单词作为命令关键字（Linux 的命令都是小写的），大写单词通常用于表达词法类型，如果大写单词不匹配任何词法类型，则被认为是命令关键字。jsh 定义的词法类型见 [4.4节](#44-jsh-的词法类型)。
+- 使用小写单词作为命令关键字（Linux 的命令都是小写的），大写单词通常用于表达词法类型，如果大写单词不匹配任何词法类型，则被认为是命令关键字。最常用的词法类型为 "PATH"，即目录或文件路径，当指定词法 PATH 时，键入 TAB 时 jsh 会自动对路径补齐，键入双 TAB 时则会罗列所有可能的路径匹配，类似 bash 的行为。jsh 定义的详细词法类型见 [4.4节](#44-jsh-的词法类型)。
 - 在组配置文件中出现过的命令语法，不需要在用户配置文件中重复添加，即在用户文件中只配置用户额外需要的命令语法即可。
 - 语法内规定的选项、参数格式以及顺序，都需要跟外部命令的选项、参数规范相匹配，否则 jsh 调用外部命令时会出错。
 
@@ -203,7 +205,7 @@ ssh { admin@192.168.1.1 | guest@192.168.1.3 }
 ```
 
 如果需要更友好的提示，那么需要额外去配置 /usr/local/etc/jsh.d/man.conf，这个配置文件很简单，关键字单独一行，之后跟随一个或多个缩进的选项行（空格或TAB缩进都可以），参见范例 [man.conf](conf/man.conf)。
-比如在 man.conf 中配置了 -l 的提示后：
+比如在 man.conf 中配置 ls 命令的 -l 选项提示：
 ```
 ls
   -l            "use a long listing format"
