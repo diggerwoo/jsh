@@ -93,7 +93,7 @@ There is no need to define the env PATH. When jsh starts it sets "PATH=/bin:/sbi
 
 If an env is defined multiple times, the latest one will take precedence. So if an env of group configuration is redefined in specific user configuration, the one in the user configuration will take precedence when this user logs in.
 
-There are two internal env vars defined by jsh：  
+There are several internal env vars of jsh:  
  - SCPEXEC, set 1 or TRUE if users/groups are allowed to use sftp and scp.
  - SCPDIR, defines public directories other than user's home directory. Multi directory shoud be separated by ':'.
  - SCP_SERVER, sets the sftp-server path, default is /usr/libexec/openssh/sftp-server. You need to manually configure this if the path is different from your system's. The path should be the same as that specified by ”subsystem sftp“ in the opessh's ssh_config configuration file.
