@@ -11,7 +11,7 @@ If the application scenario is as follows, then JSH may be suitable for you:
 - The host environment does not require these users to do relatively complex shell operations, but the basic pipe filtering or file redirection might be needed.
 
 Key steps required to deploy JSH:
-1. Compile and install jsh, note that jsh depends on [libocli](https://github.com/diggerwoo/libocli), you need to compile and install libocli first.  (Current jsh version needs libocli 0.91).
+1. Compile and install jsh, note that jsh depends on [libocli](https://github.com/diggerwoo/libocli), you need to compile and install libocli first.  (Current jsh version needs libocli 0.92).
 2. Edit the configuration file for specific group or user, to include all the limited commands.
 3. Edit /etc/passwd, or usermod -s /usr/local/bin/jsh -g <limited_group> to change the user's shell and group.
 
@@ -95,9 +95,11 @@ If an env is defined multiple times, the latest one will take precedence. So if 
 
 There are two internal env vars defined by jsh：  
  - SCPEXEC, set 1 or TRUE if users/groups are allowed to use sftp and scp.
- - SCPDIR, defines accessible directories other than user's home directory. Multi directory shoud be separated by ':'.
+ - SCPDIR, defines public directories other than user's home directory. Multi directory shoud be separated by ':'.
  - SCP_SERVER, sets the sftp-server path, default is /usr/libexec/openssh/sftp-server. You need to manually configure this if the path is different from your system's. The path should be the same as that specified by ”subsystem sftp“ in the opessh's ssh_config configuration file.
  > Note the "subsystem sftp" in sshd_config cannot be configured as ”internal-sftp“. The internal-sftp cannot work with jsh to implement the HOME directory jail.
+ - HOMEJAIL, sets whether the user is restricted to access only the HOME/public directory after logging in with SSH or CONSOLE, enabled by default, disabled when set to 0 or False.
+ > When HOMEJAIL is enabled, cd and vim can be restricted inside HOME/public directories. But for other commands, HOMEJAIL is actually achieved by restricting the PATH parameter. That is, the PATH parameter entered by the user cannot reache outside HOME/public directories. If the command parameter is misconfigured, e.g. configuring "ls WORDS" instead of "ls PATH", then the HOMEJAIL of the "ls" will fail. Refer to [section 4.3] (#43-add-permitted-command-syntaxes)
 
 For example:
 ```
@@ -126,8 +128,8 @@ The “vi” and “vim” has been internaly aliased as "vim -Z" by jsh, to avo
 Configure each permitted command as a syntax line in the configuration file. Precautions:
 - The first keyword of each command syntax must coresponds to an existing excetuable file (except for alias). For example, "logout" is a bash internal command, but there is no executable "logout" present in any bin or sbin directory, so adding a "logout" syntax line is invalid.
 - "cd", "exit" and "history" are jsh builtin commands and do not need to be added repeatedly.
-- Use lowercase words as command keywords (Linux commands are all lowercase). Uppercase words are usually used for lexical types. If the uppercase word does not match any lexical types, it is considered a command keyword. Refer to [Section 4.4](#44-lexical-types-of-jsh) for more details about jsh lexical types.
-- The command syntaxes in the group configuration do not need to be added repeatedly in the user configuration. That is, only those extra command syntaxes  required by the user should be configured in the user file.
+- Use lowercase words as command keywords (Linux commands are all lowercase). Uppercase words are usually used for lexical types. If the uppercase word does not match any lexical types, it is considered a command keyword. The most commonly used lexical type is "PATH" which is used for directories or files. For “PATH” lexical type, jsh supports typing TAB key to auto-complete the path, and double-typing the TAB key to list all matching paths, which is similar to bash's behavior. Refer to [Section 4.4](#44-lexical-types-of-jsh) for more details about jsh lexical types.
+- The command syntaxes in the group configuration do not need to be added repeatedly in the user configuration. That is, only those extra syntaxes  required by the user should be configured in the user file.
 - The parameters‘ format and sequence specified in the syntax need to meet the requirements of the actual commands, otherwise error will occur during execution.
 
 Below example allows user to make new directory and remove directory.
