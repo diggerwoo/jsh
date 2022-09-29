@@ -27,10 +27,12 @@
 #  error "Libocli Version >= 0.91 is needed."
 #endif
 
-#define JSH_VERSION	"jsh 0.99"
+#define JSH_VERSION	"jsh 1.0a"
 
 extern char *home_dir;
 extern char *sftp_server;
+
+extern int home_jailed;
 
 /* Default jsh configuration directory */
 #define JSH_CONF_DIR	"/usr/local/etc/jsh.d"
@@ -59,8 +61,8 @@ extern char *get_man_opt_desc(char *cmd, char *opt, char *desc, int len);
 extern char *get_basename(char *path);
 extern char *get_abs_dir(char *path, char *abs_dir, int len, int full);
 extern int in_subdir(char *ent, char *path);
-extern int in_scp_homes(char *ent);
-#define in_sftp_homes(x) in_scp_homes(x)
+extern int in_home_dirs(char *ent);
+extern int along_home_dirs(char *ent);
 
 extern int jtrace(pid_t pid, int argc, char **argv);
 
