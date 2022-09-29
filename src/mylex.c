@@ -76,6 +76,7 @@ path_generator(char *tok, char **matches, int limit, int st_mask)
 			if ((!base || strncmp(base, namelist[i]->d_name, base_len) == 0)) {
 				ptr = &path[1];
 				snprintf(ptr, sizeof(path)-2, "%s%s", dir, namelist[i]->d_name);
+				if (home_jailed && !along_home_dirs(ptr)) continue;
 				if (stat(ptr, &stat_buf) != 0) continue;
 				if (st_mask && (stat_buf.st_mode & st_mask) != st_mask) continue;
 				if (S_ISDIR(stat_buf.st_mode)) {
