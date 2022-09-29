@@ -10,7 +10,7 @@ JSH 是一个适用于 Linux 平台的 Jailed Shell 工具，部署 JSH 并不�
 - 主机环境不需要受限用户做相对复杂的 shell 语法操作，但可能需要支持基本的管道过滤、重定向操作。
 
 部署 JSH 需要的步骤：
-1. 编译和安装 jsh ，注意 jsh 依赖 [libocli](https://github.com/diggerwoo/libocli)，需要先编译安装 libocli （目前版本要求更新至 libocli 0.91）。
+1. 编译和安装 jsh ，注意 jsh 依赖 [libocli](https://github.com/diggerwoo/libocli)，需要先编译安装 libocli （目前版本要求更新至 libocli 0.92）。
 2. 编辑用户组或用户的命令配置文件。
 3. 编辑 /etc/passwd，或者 usermod -s /usr/local/bin/jsh -g <受限用户组> 改变用户的 shell 和 group 属性。
 
