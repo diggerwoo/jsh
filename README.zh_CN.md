@@ -5,7 +5,7 @@ JSH 是一个适用于 Linux 平台的 Jailed Shell 工具，部署 JSH 并不�
 
 如果应用场景如下，那么 JSH 可能是适合你的：
 - 需要限定某一组或某个用户，只能访问有限的 Linux 命令，甚至命令选项也是限定的，比如：只能 ssh 到某几台指定的主机。
-- 受限用户 sftp 或 scp 时只能访问自己的 HOME 目录，以及指定的公共目录。
+- 受限用户 ssh 或 sftp 登录后，以及 scp 时，都只能访问自己的 HOME 目录，以及指定的公共目录。
   > SFTP 的 HOME Jail 是基于 ptrace 系统调用实现的，目前只在 X86_64 平台测试通过。
 - 主机环境不需要受限用户做相对复杂的 shell 语法操作，但可能需要支持基本的管道过滤、重定向操作。
 
@@ -14,7 +14,7 @@ JSH 是一个适用于 Linux 平台的 Jailed Shell 工具，部署 JSH 并不�
 2. 编辑用户组或用户的命令配置文件。
 3. 编辑 /etc/passwd，或者 usermod -s /usr/local/bin/jsh -g <受限用户组> 改变用户的 shell 和 group 属性。
 
-之后用户再登录就会进入一个命令受限的 shell 环境，所能访问的命令就是上面第 2 步配置文件里所指定的。
+之后用户再登录就会进入一个受限的 shell 环境，所能访问的命令就是上面第 2 步配置文件里所指定的。
 
 ## 1. 编译安装
 ```sh
@@ -35,7 +35,7 @@ jsh 配置设计为以组文件优先，即先尝试加载组配置文件，再�
 
 在 [group.jailed.conf](conf/group.jailed.conf) 这个例子里，我们允许 jailed 组用户：
 - 执行 id, pwd, passwd, ls, vim, mkdir, rm, ping, ssh, grep 这几个命令，其中允许 grep 输出分页或重定向。
-- 使用 sftp 和 scp 访问自己 HOME 目录，以及 /home/public 这个公共目录，做上传下载。
+- 使用 sftp 和 scp 访问自己 HOME 目录和 /home/public 这个公共目录进行文件上传下载。
 
 ```sh
 # 允许 sftp 和 scp 传文件，除了 HOME，允许访问 /home/public
@@ -73,7 +73,7 @@ grep [ -v ] WORDS PATH > PATH
 usermod -g jailed -s /usr/local/bin/jsh jailuser
 ```
 
-之后 jailuser 用户 ssh 或 console 登录后就进入到 jsh ，其执行效果如下。jsh 的使用是类似 Cisco 风格的，敲 ? 提示可访问的命令或词法帮助，敲 TAB 自动补齐关键字或 PATH，jsh 内置的 man 命令可以查看简单语法：
+之后 jailuser 用户 ssh 或 console 登录后就进入到 jsh ，其执行效果如下。jsh 的使用类似 Cisco 风格，敲 ? 提示可访问的命令或词法帮助，敲 TAB 自动补齐关键字或 PATH，jsh 内置的 man 命令可以查看简单语法：
 
  ![image](https://github.com/diggerwoo/blobs/blob/main/img/jsh.gif)
 
