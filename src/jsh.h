@@ -27,7 +27,7 @@
 #  error "Libocli Version >= 0.92 is needed."
 #endif
 
-#define JSH_VERSION	"jsh 1.0a"
+#define JSH_VERSION	"jsh 1.0b"
 
 extern char *home_dir;
 extern char *sftp_server;
@@ -37,6 +37,7 @@ extern int home_jailed;
 /* Default jsh configuration directory */
 #define JSH_CONF_DIR	"/usr/local/etc/jsh.d"
 #define JSH_MAN_CONF	"/usr/local/etc/jsh.d/man.conf"
+#define JSH_BANNER	"/usr/local/etc/jsh.d/banner.txt"
 
 #define SFTP_SERVER	"/usr/libexec/openssh/sftp-server"
 
