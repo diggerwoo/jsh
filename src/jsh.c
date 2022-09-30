@@ -528,6 +528,20 @@ err_out:
 }
 
 /*
+ * Display banner if present
+ */
+void
+jsh_show_banner()
+{
+	struct stat stat_buf;
+	char	cmd_str[64];
+	if (stat(JSH_BANNER, &stat_buf) == 0 && S_ISREG(stat_buf.st_mode)) {
+		snprintf(cmd_str, sizeof(cmd_str), "cat %s", JSH_BANNER);
+		exec_system_cmd(cmd_str, COMMON_EXEC);
+	}
+}
+
+/*
  * main entry, -c is limited to jailed scp
  */
 int
@@ -562,6 +576,7 @@ main(int argc, char **argv)
 	ocli_rl_set_timeout(300);
 	ocli_rl_set_view(BASIC_VIEW);
 	jsh_set_prompt(BASIC_VIEW);
+	jsh_show_banner();
 
 	ocli_rl_loop();
 	save_history();
