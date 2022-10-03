@@ -27,7 +27,7 @@
 #  error "Libocli Version >= 0.92 is needed."
 #endif
 
-#define JSH_VERSION	"jsh 1.0b"
+#define JSH_VERSION	"jsh 1.0c"
 
 extern char *home_dir;
 extern char *sftp_server;
