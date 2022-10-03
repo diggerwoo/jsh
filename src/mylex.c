@@ -41,15 +41,15 @@
 static int
 path_generator(char *tok, char **matches, int limit, int st_mask)
 {
-	struct dirent **namelist = NULL;
-	int	dir_num = 0;
-	int	i = 0, n = 0;
+	DIR	*dptr;
+	struct dirent *dent;
+	int	ignore_ddots = 1, n = 0;
 
 	char	dir[256] = "";
 	char	*base = NULL, *ptr = NULL;
 	int	dir_len = 0, base_len = 0;
 
-	char	path[256];
+	char	path[PATH_MAX];
 	struct stat stat_buf;
 
 	if (tok && tok[0]) {
@@ -68,30 +68,31 @@ path_generator(char *tok, char **matches, int limit, int st_mask)
 		}
 	}
 
-	dir_num = scandir(dir[0] ? dir:"./", &namelist, NULL, alphasort);
-	if (dir_num < 0) return 0;
+	/* Like bash, prompt "." or ".." only if basename is "." or ".." */
+	if (base && (strcmp(base, ".") == 0 || strcmp(base, "..") == 0))
+		ignore_ddots = 0;
 
-	for (i = 0; i < dir_num; i++) {
-		if (n < limit) {
-			if ((!base || strncmp(base, namelist[i]->d_name, base_len) == 0)) {
-				ptr = &path[1];
-				snprintf(ptr, sizeof(path)-2, "%s%s", dir, namelist[i]->d_name);
-				if (home_jailed && !along_home_dirs(ptr)) continue;
-				if (stat(ptr, &stat_buf) != 0) continue;
-				if (st_mask && (stat_buf.st_mode & st_mask) != st_mask) continue;
-				if (S_ISDIR(stat_buf.st_mode)) {
-					path[0] = '^';
-					strncat(path, "/", 1);
-					matches[n++] = strdup(path);
-				} else {
-					matches[n++] = strdup(ptr);
-				}
+	if (!(dptr = opendir(dir[0] ? dir:"./"))) return 0;
+	while (n < limit && (dent = readdir(dptr))) {
+		if (ignore_ddots &&
+		    (strcmp(dent->d_name, ".") == 0 || strcmp(dent->d_name, "..") == 0))
+			continue;
+		if ((!base || strncmp(base, dent->d_name, base_len) == 0)) {
+			ptr = &path[1];
+			snprintf(ptr, sizeof(path)-2, "%s%s", dir, dent->d_name);
+			if (home_jailed && !along_home_dirs(ptr)) continue;
+			if (stat(ptr, &stat_buf) != 0) continue;
+			if (st_mask && (stat_buf.st_mode & st_mask) != st_mask) continue;
+			if (S_ISDIR(stat_buf.st_mode)) {
+				path[0] = '^';
+				strncat(path, "/", 1);
+				matches[n++] = strdup(path);
+			} else {
+				matches[n++] = strdup(ptr);
 			}
 		}
-		free(namelist[i]);
 	}
-
-	if (namelist) free(namelist);
+	closedir(dptr);
 	return n;
 }
 
