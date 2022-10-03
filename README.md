@@ -42,8 +42,8 @@ env SCPEXEC=1
 env SCPDIR=/home/public
 
 # Alias settings for ls and grep, with colored output enabled
-aias ls "ls -a --color=auto"
-alis grep "grep --color=auto"
+alias ls "ls -a --color=auto"
+alias grep "grep --color=auto"
 
 # Allowed commands
 id
