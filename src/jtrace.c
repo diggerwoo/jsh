@@ -215,8 +215,6 @@ jtrace_sftp_server(pid_t pid, int argc, char **argv)
 					syslog(LOG_DEBUG, "injail triggered by %s\n", call_info);
 				}
 
-			} else {
-				incall = 0;
 				snprintf(last_path, sizeof(last_path), "%s", path_info);
 				/*
 				 * sftp-server uses stat/lstat to assert the directory,
@@ -225,17 +223,18 @@ jtrace_sftp_server(pid_t pid, int argc, char **argv)
 				if (injail) {
 					if (strcmp(path_info, "/etc/localtime") != 0 &&
 					    !along_home_dirs(path_info)) {
-						regs.rax = -EACCES;
+						regs.orig_rax = -1;
 						if ((res = ptrace(PTRACE_SETREGS, pid, 0, &regs)) < 0) {
-							syslog(LOG_ERR, "jtrace-sftp block %s: %s\n",
+							syslog(LOG_ERR, "jtrace-sftp deny %s: %s\n",
 								call_info, strerror(errno));
 							break;
 						}
-						syslog(LOG_DEBUG, "block: %s = %lld\n", call_info, regs.rax);
+						block = 1;
 					}
-				} else {
-					syslog(LOG_DEBUG, "%s = %lld\n", call_info, regs.rax);
 				}
+			} else {
+				incall = 0;
+				syslog(LOG_DEBUG, "%s = %lld\n", call_info, regs.rax);
 			}
 
 		} else if (regs.orig_rax == __NR_mkdir || regs.orig_rax == __NR_rmdir ||
@@ -427,8 +426,6 @@ jtrace_vim(pid_t pid, int argc, char **argv)
 					get_callname(regs.orig_rax),
 					path_info[0] ? path_info:"n/a");
 
-			} else {
-				incall = 0;
 				/* Bypass /usr/share/vim*
 				 * Limit stat paths along with home dirs.
 				 */
@@ -436,17 +433,18 @@ jtrace_vim(pid_t pid, int argc, char **argv)
 					if (strncmp(path_info, "/usr/share/vim", 14) == 0) {
 						syslog(LOG_DEBUG, "bypass %s\n", call_info);
 					} else if (!along_home_dirs(path_info)) {
-						regs.rax = -EACCES;
+						regs.orig_rax = -1;
 						if ((res = ptrace(PTRACE_SETREGS, pid, 0, &regs)) < 0) {
-							syslog(LOG_ERR, "jtrace-sftp block %s: %s\n",
+							syslog(LOG_ERR, "jtrace-vim deny %s: %s\n",
 								call_info, strerror(errno));
 							break;
 						}
-						syslog(LOG_DEBUG, "block: %s = %lld\n", call_info, regs.rax);
+						block = 1;
 					}
-				} else {
-					syslog(LOG_DEBUG, "%s = %lld\n", call_info, regs.rax);
 				}
+			} else {
+				incall = 0;
+				syslog(LOG_DEBUG, "%s = %lld\n", call_info, regs.rax);
 			}
 
 		} else if (regs.orig_rax == -1) {
