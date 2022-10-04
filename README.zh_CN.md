@@ -31,7 +31,7 @@ jsh 的配置文件部署于 /usr/local/etc/jsh.d 下。
 jsh 配置设计为以组文件优先，即先尝试加载组配置文件，再尝试加载用户配置文件。
 若一个组内所有用户控制策略相同，那么本组只需要配置一个组文件，而不需要配置任何用户文件。
 若组内有个别用户需要额外的命令，比如 admin 用户，那么再去配置 user.admin.conf，增加 admin 所需要的其它命令。
-配置文件说明详见 [第 4 节](#4-配置文件说明)。
+配置文件说明详见 [第 4 节](#4-用户配置文件说明)。
 
 在 [group.jailed.conf](conf/group.jailed.conf) 这个例子里，我们允许 jailed 组用户：
 - 执行 id, pwd, passwd, ls, vim, mkdir, rm, ping, ssh, grep 这几个命令，其中允许 grep 输出分页或重定向。
@@ -78,7 +78,7 @@ usermod -g jailed -s /usr/local/bin/jsh jailuser
  ![image](https://github.com/diggerwoo/blobs/blob/main/img/jsh.gif)
 
 
-## 4. 配置文件说明
+## 4. 用户配置文件说明
 
 ### 4.1 环境变量
 
@@ -194,7 +194,9 @@ ssh { admin@192.168.1.1 | guest@192.168.1.3 }
 | MAC_ADDR | MAC 地址 |
 | EMAIL_ADDR | EMAIL 地址 |
 
-### 4.5 改进命令选项提示信息
+## 5. 其它配置文件以及调试模式
+
+### 5.1 man.conf
 
 当键入 ? 时，jsh 会提示命令用法，但对于命令的选项，比如 ls 的 -l 选项，提示是空的。
 ```
@@ -220,3 +222,19 @@ ls
   <Enter>                - End of command
 ```
 
+
+### 5.2 banner.txt
+
+配置文件 /usr/local/etc/jsh.d/man.conf 用于编辑用户登录后所显示文本提示，比如显示一段欢迎或使用帮助文本。
+
+
+### 5.3 日志以及调试模式
+
+jsh 的 syslog facility 为 LOG_AUTHPRIV，在 CentOS 平台，默认此类型日志会被记录到 /var/log/secure 日志文件中。
+
+jsh 提供一个详细调试手段，可以跟踪详细的文件/目录的 jail 处理过程。如果在用户目录下生成一个 .jsh_debug 文件，那么该用户重新登录后，syslog 中将会记录详细的调试信息。
+
+比如打开 jailuser 用户的调试模式：
+```
+touch /home/jailuser/.jsh_debug
+```
