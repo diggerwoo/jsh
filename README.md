@@ -30,7 +30,7 @@ After making process, the jsh will be installed into /usr/local/bin, and a sampl
 The jsh configuration is deployed under “/usr/local/etc/jsh.d”. Assuming user "testuser" belongs to group "jailed", then the group configuration file will be “group.jailed.conf” , while the user file will be “user.testuser.conf” .
 The jsh will try to load the group configuration first, and then try to load the user specific configuration. 
 If all users in a group have the same control policy, only one group file needs to be configured.
-If additional commands are needed for specific users in the group, such for user “admin”, then go to configure “user.admin.conf” . See the [section 4](#4-Group-User-Configuration-file) for detailed description of configuration file.
+If additional commands are needed for specific users in the group, such for user “admin”, then go to configure “user.admin.conf” . See the [section 4](#4-GroupUser-Configuration-file) for detailed description of configuration file.
 
 In the sample configuration [group.jailed.conf](conf/group.jailed.conf), we allow users of jailed group to:
 - excecute limited comands: id, pwd, passwd, ls, mkdir, rm, vim, ping, ssh .
