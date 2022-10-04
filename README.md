@@ -30,7 +30,7 @@ After making process, the jsh will be installed into /usr/local/bin, and a sampl
 The jsh configuration is deployed under “/usr/local/etc/jsh.d”. Assuming user "testuser" belongs to group "jailed", then the group configuration file will be “group.jailed.conf” , while the user file will be “user.testuser.conf” .
 The jsh will try to load the group configuration first, and then try to load the user specific configuration. 
 If all users in a group have the same control policy, only one group file needs to be configured.
-If additional commands are needed for specific users in the group, such for user “admin”, then go to configure “user.admin.conf” . See the [section 4](#4-Configuration-file) for detailed description of configuration file.
+If additional commands are needed for specific users in the group, such for user “admin”, then go to configure “user.admin.conf” . See the [section 4](#4-Group-User-Configuration-file) for detailed description of configuration file.
 
 In the sample configuration [group.jailed.conf](conf/group.jailed.conf), we allow users of jailed group to:
 - excecute limited comands: id, pwd, passwd, ls, mkdir, rm, vim, ping, ssh .
@@ -76,7 +76,7 @@ The man command can be used to display brief command syntaxes.
 
  ![image](https://github.com/diggerwoo/blobs/blob/main/img/jsh.gif)
 
-## 4. Configuration file
+## 4. Group/User Configuration file
 
 ### 4.1 Environment variables
 
@@ -192,7 +192,9 @@ Other infrequently used lexical types are as follows.
 | MAC_ADDR | MAC address |
 | EMAIL_ADDR | EMail address |
 
-### 4.5 Improve command option prompt
+## 5 Other configurations and debug mode
+
+### 5.1 man.conf
 
 When typing ‘?’, jsh prompts for command usage. But for command options, such as the -l option of ls, the prompt is empty.
 ```
@@ -215,4 +217,20 @@ After saving the configuration and log in again, type '?' after ‘ls ’ then y
   -l                     - Use a long listing format
   Path name              - Path name
   <Enter>                - End of command
+```
+
+### 5.2 banner.txt
+
+The configuration file /usr/local/etc/jsh.d/man.conf is used to edit the text displayed after users log in, such as displaying a welcome or help text.
+
+
+### 5.3 Debug mode
+
+The syslog facility of jsh is LOG_AUTHPRIV. On the CentOS platform, this type of log will go into the /var/log/secure by default.
+
+JSH also provides a debug mode for syslog, which can trace the detailed jailing process. If a ".jsh_debug" file exists in the user directory, the debug  information will be recorded into syslog after the user logs in.
+
+For example, to enable debug mode for the user "jailuser":
+```
+touch /home/jailuser/.jsh_debug
 ```
