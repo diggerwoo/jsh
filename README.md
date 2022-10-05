@@ -8,7 +8,6 @@ If the application scenario is as follows, then JSH may be suitable for you:
 - Need to limit certain groups or certain users to only access limited Linux commands, and even command options are limited. E.g. ssh to limited range of hosts.
 - Need to restrict user sftp or scp to only access their own HOME directory, as well as the specified public directory.
   > The HOME Jail of SFTP is implemented based on ptrace. It works on X86_64 but has not been tested on i386.
-- The host environment does not require these users to do relatively complex shell operations, but the basic pipe filtering or file redirection might be needed.
 
 Key steps required to deploy JSH:
 1. Compile and install jsh, note that jsh depends on [libocli](https://github.com/diggerwoo/libocli), you need to compile and install libocli first.  (Current jsh version needs libocli 0.92).
