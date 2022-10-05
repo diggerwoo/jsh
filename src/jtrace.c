@@ -133,7 +133,7 @@ jtrace_sftp_server(pid_t pid, int argc, char **argv)
 					flags = regs.rdx;
 				}
 
-				jtrace_get_string(pid, path, path_info, sizeof(path_info)-1);
+				jtrace_get_string(pid, path, path_info, sizeof(path_info));
 				jtrace_xlat_flags(flags, flags_info, sizeof(flags_info));
 
 				snprintf(call_info, sizeof(call_info),
@@ -199,7 +199,7 @@ jtrace_sftp_server(pid_t pid, int argc, char **argv)
 			if (incall == 0) {
 				incall = 1;
 
-				jtrace_get_string(pid, (char *) regs.rdi, path_info, sizeof(path_info)-1);
+				jtrace_get_string(pid, (char *) regs.rdi, path_info, sizeof(path_info));
 				snprintf(call_info, sizeof(call_info),
 					"%s(\"%s\")",
 					get_callname(regs.orig_rax),
@@ -244,11 +244,11 @@ jtrace_sftp_server(pid_t pid, int argc, char **argv)
 			if (incall == 0) {
 				incall = 1;
 
-				jtrace_get_string(pid, (char *) regs.rdi, path_info, sizeof(path_info)-1);
+				jtrace_get_string(pid, (char *) regs.rdi, path_info, sizeof(path_info));
 				bzero(path_dest, sizeof(path_dest));
 
 				if (regs.orig_rax == __NR_link || regs.orig_rax == __NR_rename) {
-					jtrace_get_string(pid, (char *) regs.rsi, path_dest, sizeof(path_dest)-1);
+					jtrace_get_string(pid, (char *) regs.rsi, path_dest, sizeof(path_dest));
 					snprintf(call_info, sizeof(call_info),
 						"%s(\"%s\", \"%s\")",
 						get_callname(regs.orig_rax),
@@ -357,7 +357,7 @@ jtrace_vim(pid_t pid, int argc, char **argv)
 					flags = regs.rdx;
 				}
 
-				jtrace_get_string(pid, path, path_info, sizeof(path_info)-1);
+				jtrace_get_string(pid, path, path_info, sizeof(path_info));
 				jtrace_xlat_flags(flags, flags_info, sizeof(flags_info));
 
 				snprintf(call_info, sizeof(call_info),
@@ -420,7 +420,7 @@ jtrace_vim(pid_t pid, int argc, char **argv)
 			if (incall == 0) {
 				incall = 1;
 
-				jtrace_get_string(pid, (char *) regs.rdi, path_info, sizeof(path_info)-1);
+				jtrace_get_string(pid, (char *) regs.rdi, path_info, sizeof(path_info));
 				snprintf(call_info, sizeof(call_info),
 					"%s(\"%s\")",
 					get_callname(regs.orig_rax),
@@ -561,5 +561,7 @@ jtrace_get_string(pid_t pid, char *addr, char *buf, int buflen)
 		ptr += sizeof(long);
 		offset += sizeof(long);
 	}
+
+	if (offset == buflen) buf[--offset] = '\0';
 	return offset;
 }
