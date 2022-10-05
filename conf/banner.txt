@@ -1,0 +1,6 @@
+
+Welcome to use JSH.
+- Type '?' to get inline keyword/parameter help.
+- Type 'TAB' to auto-complete keyword or PATH of directory/file.
+- Use "man <COMMAND>" to get command syntax help.
+
