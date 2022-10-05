@@ -520,16 +520,16 @@ jtrace_xlat_flags(int flags, char *buf, int buflen)
 	else
 		ptr += (len = snprintf(ptr, left, "N/A"));
 
-	if ((left -= len) < 0) return buflen;
+	if ((left -= len) <= 0) return buflen;
 
 	if (FFLAG(flags, O_CLOEXEC)) {
 		ptr += (len = snprintf(ptr, left, "|O_CLOEXEC"));
-		if ((left -= len) < 0) return buflen;
+		if ((left -= len) <= 0) return buflen;
 	}
 
 	if (FFLAG(flags, O_DIRECTORY)) {
 		ptr += (len = snprintf(ptr, left, "|O_DIRECTORY"));
-		if ((left -= len) < 0) return buflen;
+		if ((left -= len) <= 0) return buflen;
 	}
 	return buflen - left;
 }
