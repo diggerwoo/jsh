@@ -11,6 +11,7 @@ ETC = /usr/local/etc
 JSHDIR = $(ETC)/jsh.d
 SAMPLE = group.jailed.conf
 MANCONF = man.conf
+BANNER = banner.txt
 
 CFLAGS := -O2 -Wall -Wno-unused-but-set-variable -g $(INC)
 CC := gcc
@@ -38,6 +39,9 @@ ifeq ($(wildcard $(JSHDIR)/$(SAMPLE)),)
 endif
 ifeq ($(wildcard $(JSHDIR)/$(MANCONF)),)
 	install -m 644 -o root -g root -D conf/$(MANCONF) $(JSHDIR)/$(MANCONF)
+endif
+ifeq ($(wildcard $(JSHDIR)/$(BANNER)),)
+	install -m 644 -o root -g root -D conf/$(BANNER) $(JSHDIR)/$(BANNER)
 endif
 
 clean:
