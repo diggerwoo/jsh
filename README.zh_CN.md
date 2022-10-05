@@ -7,7 +7,6 @@ JSH 是一个适用于 Linux 平台的 Jailed Shell 工具，部署 JSH 并不�
 - 需要限定某一组或某个用户，只能访问有限的 Linux 命令，甚至命令选项也是限定的，比如：只能 ssh 到某几台指定的主机。
 - 受限用户 ssh 或 sftp 登录后，以及 scp 时，都只能访问自己的 HOME 目录，以及指定的公共目录。
   > SFTP 的 HOME Jail 是基于 ptrace 系统调用实现的，目前只在 X86_64 平台测试通过。
-- 主机环境不需要受限用户做相对复杂的 shell 语法操作，但可能需要支持基本的管道过滤、重定向操作。
 
 部署 JSH 需要的步骤：
 1. 编译和安装 jsh ，注意 jsh 依赖 [libocli](https://github.com/diggerwoo/libocli)，需要先编译安装 libocli （目前版本要求更新至 libocli 0.92）。
