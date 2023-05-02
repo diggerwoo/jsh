@@ -32,7 +32,7 @@ If all users in a group have the same control policy, only one group file needs 
 If additional commands are needed for specific users in the group, such for user “admin”, then go to configure “user.admin.conf” . See the [section 4](#4-GroupUser-Configuration-file) for detailed description of configuration file.
 
 In the sample configuration [group.jailed.conf](conf/group.jailed.conf), we allow users of jailed group to:
-- excecute limited comands: id, pwd, passwd, ls, mkdir, rm, vim, ping, ssh .
+- execute limited commands: id, pwd, passwd, ls, mkdir, rm, vim, ping, ssh .
 - use scp to upload/download file in self HOME and extra /home/public directory.
 
 ```sh
@@ -94,11 +94,11 @@ If an env is defined multiple times, the latest one will take precedence. So if 
 
 There are several internal env vars of jsh:  
  - SCPEXEC, set 1 or TRUE if users/groups are allowed to use sftp and scp.
- - SCPDIR, defines public directories other than user's home directory. Multi directory shoud be separated by ':'.
+ - SCPDIR, defines public directories other than user's home directory. Multi directory should be separated by ':'.
  - SCP_SERVER, sets the sftp-server path, default is /usr/libexec/openssh/sftp-server. You need to manually configure this if the path is different from your system's. The path should be the same as that specified by ”subsystem sftp“ in the opessh's ssh_config configuration file.
  > Note the "subsystem sftp" in sshd_config cannot be configured as ”internal-sftp“. The internal-sftp cannot work with jsh to implement the HOME directory jail.
  - HOMEJAIL, sets whether the user is restricted to access only the HOME/public directory after logging in with SSH or CONSOLE, enabled by default, disabled when set to 0 or False.
- > When HOMEJAIL is enabled, cd and vim can be restricted inside HOME/public directories. But for other commands, HOMEJAIL is actually achieved by restricting the PATH parameter. That is, the PATH parameter entered by the user cannot reache outside HOME/public directories. If the command parameter is misconfigured, e.g. configuring "ls WORDS" instead of "ls PATH", then the HOMEJAIL of the "ls" will fail. Refer to [section 4.3](#43-add-permitted-command-syntaxes) for more details.
+ > When HOMEJAIL is enabled, cd and vim can be restricted inside HOME/public directories. But for other commands, HOMEJAIL is actually achieved by restricting the PATH parameter. That is, the PATH parameter entered by the user cannot reach outside HOME/public directories. If the command parameter is misconfigured, e.g. configuring "ls WORDS" instead of "ls PATH", then the HOMEJAIL of the "ls" will fail. Refer to [section 4.3](#43-add-permitted-command-syntaxes) for more details.
 
 For example:
 ```
@@ -120,12 +120,12 @@ For example:
 alias ls "ls -a"
 ```
 
-The “vi” and “vim” has been internaly aliased as "vim -Z" by jsh, to avoid user executing external Linux commands inside vim.
+The “vi” and “vim” has been internally aliased as "vim -Z" by jsh, to avoid user executing external Linux commands inside vim.
 
 ### 4.3 Add permitted command syntaxes
 
 Configure each permitted command as a syntax line in the configuration file. Precautions:
-- The first keyword of each command syntax must coresponds to an existing excetuable file (except for alias). For example, "logout" is a bash internal command, but there is no executable "logout" present in any bin or sbin directory, so adding a "logout" syntax line is invalid.
+- The first keyword of each command syntax must corespond to an existing executable file (except for alias). For example, "logout" is a bash internal command, but there is no executable "logout" present in any bin or sbin directory, so adding a "logout" syntax line is invalid.
 - "cd", "exit" and "history" are jsh builtin commands and do not need to be added repeatedly.
 - Use lowercase words as command keywords (Linux commands are all lowercase). Uppercase words are usually used for lexical types. If the uppercase word does not match any lexical types, it is considered a command keyword. The most commonly used lexical type is "PATH" which is used for directories or files. For “PATH” lexical type, jsh supports typing TAB key to auto-complete the path, and double-typing the TAB key to list all matching paths, which is similar to bash's behavior. Refer to [Section 4.4](#44-lexical-types-of-jsh) for more details about jsh lexical types.
 - The command syntaxes in the group configuration do not need to be added repeatedly in the user configuration. That is, only those extra syntaxes  required by the user should be configured in the user file.
@@ -137,16 +137,16 @@ mkdir PATH
 rmdir PATH 
 ```
 
-Special syntax charactors **[ ] { | }** are allowed for options or alternatives in the syntax line.
+Special syntax characters **[ ] { | }** are allowed for options or alternatives in the syntax line.
 - **Alternative** segment **{ | }**  , allows two of more tokens separated by '**|**' . E.g. " { add | del } "
 - **Optional** segment **[  ]**, each segment can have multiple tokens. E.g. " [ -c INT ] "
 
-Usage limitaions of syntax charactors:
+Usage limitations of syntax characters:
 - SPACE must be present between reserved chars, or between reserved char and other tokens.
 - NO **[ ]** or **{ }** are allowed to be nested inside **{ }**.
 - **{ }** can be nested inside **[ ]**. E.g.  " [ -c { 5 | 10 | 100 } ] "
 
-Below example allows user to ping IP or domain name, and to use -c option to choose the number of ICMP packets amonng 5, 10, and 100.
+Below example allows user to ping IP or domain name, and to use -c option to choose the number of ICMP packets among 5, 10, and 100.
 ```
 ping [ -c { 5 | 10 | 100 } ] { IP_ADDR | DOMAIN_NAME }
 ```
@@ -177,7 +177,7 @@ Commonly used lexical types are as follows.
 Other infrequently used lexical types are as follows.
 | Lexical Type | Description |
 | :--- | :--- |
-| HEX | Hexidecimal |
+| HEX | Hexadecimal |
 | IP_MASK | IPv4 mask |
 | IP_PREFIX | IPv4Addr/<0-32> |
 | IP_BLOCK | IPv4Addr[/<0-32>] |
@@ -203,7 +203,7 @@ When typing ‘?’, jsh prompts for command usage. But for command options, suc
   <Enter>                - End of command
 ```
 
-If you need more friendly prompts, you can configure the /usr/local/etc/jsh.d/man.conf. The line format of man.conf is straitforward, with each line having two elements: keyword/option and manual text. The keyword line starts without any spaces and the manual text is optional, whilst the option line starts with space/TAB and manual text is madatory. Please refer to [man.conf](conf/man.conf).
+If you need more friendly prompts, you can configure the /usr/local/etc/jsh.d/man.conf. The line format of man.conf is straightforward, with each line having two elements: keyword/option and manual text. The keyword line starts without any spaces and the manual text is optional, whilst the option line starts with space/TAB and manual text is mandatory. Please refer to [man.conf](conf/man.conf).
 For example, configure the prompt of '-l' option of command 'ls':
 ```
 ls
