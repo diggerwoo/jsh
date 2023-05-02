@@ -1,7 +1,7 @@
 /*
  * jsh, a simple jailed shell based on libocli.
  *
- * Copyright (C) 2022-2022 Digger Wu (digger.wu@linkbroad.com)
+ * Copyright (C) 2022-2023 Digger Wu (digger.wu@linkbroad.com)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -155,8 +155,10 @@ jtrace_sftp_server(pid_t pid, int argc, char **argv)
 					 */
 					if (strcmp(path_info, last_path) != 0 &&
 					    (strncmp(path_info, "/etc/", 5) == 0 ||
+					     strncmp(path_info, "/dev/null", 9) == 0 ||
 					     strncmp(path_info, "/lib64/", 7) == 0 ||
 					     strncmp(path_info, "/lib/", 5) == 0 ||
+					     strncmp(path_info, "/usr/lib64/", 11) == 0 ||
 					     strncmp(path_info, "/usr/lib/", 9) == 0)) {
 						syslog(LOG_DEBUG, "bypass %s\n", call_info);
 					} else
@@ -406,8 +408,7 @@ jtrace_vim(pid_t pid, int argc, char **argv)
 				incall = 0;
 
 				/* Set injail after first opening of /etc/passwd */
-				if (!injail && regs.orig_rax == __NR_open &&
-				    strcmp(path_info, "/etc/passwd") == 0) {
+				if (!injail && strcmp(path_info, "/etc/passwd") == 0) {
 					injail = 1;
 					syslog(LOG_DEBUG, "injail triggered after %s\n", call_info);
 				}
