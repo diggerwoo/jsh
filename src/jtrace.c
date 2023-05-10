@@ -557,7 +557,7 @@ jtrace_get_string(pid_t pid, char *addr, char *buf, int buflen)
 
 		for (i = 0; i < sizeof(long); i++) {
 			if (!*(ptr + i))
-			return (offset + i);
+				return (offset + i);
 		}
 		ptr += sizeof(long);
 		offset += sizeof(long);
