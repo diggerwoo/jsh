@@ -191,7 +191,7 @@ Other infrequently used lexical types are as follows.
 | MAC_ADDR | MAC address |
 | EMAIL_ADDR | EMail address |
 
-## 5 Other configurations and debug mode
+## 5. Other configurations and debug mode
 
 ### 5.1 man.conf
 
@@ -220,7 +220,7 @@ After saving the configuration and log in again, type '?' after ‘ls ’ then y
 
 ### 5.2 banner.txt
 
-The configuration file /usr/local/etc/jsh.d/man.conf is used to edit the text displayed after users log in, such as displaying a welcome or help text.
+The configuration file /usr/local/etc/jsh.d/banner.txt is used to edit the text displayed after users log in, such as displaying a welcome or help text.
 
 
 ### 5.3 Debug mode

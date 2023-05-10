@@ -224,7 +224,7 @@ ls
 
 ### 5.2 banner.txt
 
-配置文件 /usr/local/etc/jsh.d/man.conf 用于编辑用户登录后所显示文本提示，比如显示一段欢迎或使用帮助文本。
+配置文件 /usr/local/etc/jsh.d/banner.txt 用于编辑用户登录后所显示文本提示，比如显示一段欢迎或使用帮助文本。
 
 
 ### 5.3 日志以及调试模式
