@@ -159,7 +159,8 @@ jtrace_sftp_server(pid_t pid, int argc, char **argv)
 					     strncmp(path_info, "/lib64/", 7) == 0 ||
 					     strncmp(path_info, "/lib/", 5) == 0 ||
 					     strncmp(path_info, "/usr/lib64/", 11) == 0 ||
-					     strncmp(path_info, "/usr/lib/", 9) == 0)) {
+					     strncmp(path_info, "/usr/lib/", 9) == 0 ||
+					     strncmp(path_info, "/proc/sys/", 10) == 0)) {
 						syslog(LOG_DEBUG, "bypass %s\n", call_info);
 					} else
 					/*
