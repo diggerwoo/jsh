@@ -38,6 +38,10 @@ char	*sftp_server = SFTP_SERVER;
 /* Enable home jailed by default */
 int	home_jailed = 1;
 
+/* Enable strict service port limit */
+int	strict_jsh_port = 0;
+int	strict_sftp_port = 0;
+
 /*
  * Set jsh specific readline prompt
  */
@@ -375,6 +379,40 @@ jsh_read_conf(char *path)
 }
 
 /*
+ * Init jsh port conf
+ */
+void
+jsh_port_init()
+{
+	FILE	*fp;
+	char	buf[512], *key, *val;
+	int	port = 0;
+
+	if (!(fp = fopen(JSH_PORT_CONF, "r")))
+		return;
+
+	while (fgets(buf, sizeof(buf), fp)) {
+		if (!(key = strtok(buf, " \t\r\n")))
+			continue;
+
+		if (strcmp(key, "strict_jsh_port") == 0) {
+		    if ((val = strtok(NULL, " \t\r\n")) &&
+			(port = atoi(val)) > 0 && port < 65536)
+			strict_jsh_port = port;
+			syslog(LOG_INFO, "set strict_jsh_port = %d", port);
+
+		} else if (strcmp(key, "strict_sftp_port") == 0) {
+		    if ((val = strtok(NULL, " \t\r\n")) &&
+			(port = atoi(val)) > 0 && port < 65536)
+			strict_sftp_port = port;
+			syslog(LOG_INFO, "set strict_sftp_port = %d", port);
+		}
+	}
+
+	fclose(fp);
+}
+
+/*
  * Init jsh commands
  */
 int
@@ -386,6 +424,7 @@ jsh_init()
 	struct stat	stat_buf;
 	char	*ptr, path[64], env_str[80];
 
+	jsh_port_init();
 	jsh_man_init();
 	mylex_init();
 
@@ -501,6 +540,24 @@ get_sftp_server()
 }
 
 /*
+ * Get current SSH service port
+ */
+int
+get_ssh_port()
+{
+	char	*client, *ca, *cp, *sp;
+
+	if (!(client = getenv("SSH_CLIENT")) ||
+	    !(ca = strtok(client, " \t\r\n")) ||
+	    !(cp = strtok(NULL, " \t\r\n")) ||
+	    !(sp = strtok(NULL, " \t\r\n")))
+		return 0;
+
+	syslog(LOG_DEBUG, "get SSH_CLIENT = %s %s %s", ca, cp, sp);
+	return atoi(sp);
+}
+
+/*
  * Try to authorize the scp command transfered by "jsh -c"
  */
 int
@@ -548,6 +605,7 @@ int
 main(int argc, char **argv)
 {
 	int	res = 0;
+	int	port = 0;
 
 	openlog("jsh", LOG_PID, LOG_AUTHPRIV);
 
@@ -558,17 +616,31 @@ main(int argc, char **argv)
 	cmd_manual_init();
 
 	jsh_init();
+	port = get_ssh_port();
+	syslog(LOG_DEBUG, "get SSH_PORT = %d", port);
 
 	/* Try jailed scp */
 	if (argc >= 3 && strcmp(argv[1], "-c") == 0) {
 		if (!scp_enabled()) goto out;
 		syslog(LOG_DEBUG, "-c '%s'", argv[2]);
 
+		if (strict_sftp_port && port && strict_sftp_port != port) {
+			syslog(LOG_WARNING, "SFTP to %d != %d denied",
+			       port, strict_sftp_port);
+			goto out;
+		}
+
 		if ((sftp_server = get_sftp_server()) &&
 		    strcmp(argv[2], sftp_server) == 0)
 			res = exec_system_cmd(argv[2], JAILED_EXEC);
 		else if ((res = auth_scp_exec(argv[2])) == 0)
 			res = exec_system_cmd(argv[2], COMMON_EXEC);
+		goto out;
+	}
+
+	if (strict_jsh_port && port && strict_jsh_port != port) {
+		syslog(LOG_WARNING, "JSH to %d != %d denied",
+		       port, strict_jsh_port);
 		goto out;
 	}
 
