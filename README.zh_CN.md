@@ -221,7 +221,6 @@ ls
   <Enter>                - End of command
 ```
 
-
 ### 5.2 banner.txt
 
 配置文件 /usr/local/etc/jsh.d/banner.txt 用于编辑用户登录后所显示文本提示，比如显示一段欢迎或使用帮助文本。
@@ -237,3 +236,21 @@ jsh 提供一个详细调试手段，可以跟踪详细的文件/目录的 jail 
 ```
 touch /home/jailuser/.jsh_debug
 ```
+
+### 5.4 严格限定 SSH 和 SFTP 服务端口
+
+如果你需要为 SSH 和 SFTP 限定不同的服务端口，比如端口 22 仅用于 SSH 访问 jsh，另开一个高端口 65522 仅用于 SFTP 或 SCP，那么需要使用到 /usr/local/etc/jsh.d/port.conf 配置文件。
+
+首先编辑 /etc/ssh/sshd_config 如下，并重启 sshd 服务：
+```
+Port 22
+Port 65522
+```
+
+之后编辑 /usr/local/etc/jsh.d/port.conf 如下：
+```
+strict_jsh_port        22
+strict_sftp_port       65522
+```
+
+下次 SSH 或 SFTP 登录时，端口限定规则即生效。
