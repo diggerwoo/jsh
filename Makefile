@@ -12,6 +12,7 @@ JSHDIR = $(ETC)/jsh.d
 SAMPLE = group.jailed.conf
 MANCONF = man.conf
 BANNER = banner.txt
+PORTCONF = port.conf
 
 CFLAGS := -O2 -Wall -Wno-unused-but-set-variable -g $(INC)
 CC := gcc
@@ -42,6 +43,9 @@ ifeq ($(wildcard $(JSHDIR)/$(MANCONF)),)
 endif
 ifeq ($(wildcard $(JSHDIR)/$(BANNER)),)
 	install -m 644 -o root -g root -D conf/$(BANNER) $(JSHDIR)/$(BANNER)
+endif
+ifeq ($(wildcard $(JSHDIR)/$(PORTCONF)),)
+	install -m 644 -o root -g root -D conf/$(PORTCONF) $(JSHDIR)/$(PORTCONF)
 endif
 
 clean:
