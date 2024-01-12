@@ -233,3 +233,21 @@ For example, to enable debug mode for the user "jailuser":
 ```
 touch /home/jailuser/.jsh_debug
 ```
+
+### 5.4 Strictly limit SSH and SFTP service ports
+
+If you need to limit different service ports for SSH and SFTP, for example, port 22 is only used for SSH to access jsh, and another high port 65522 is only used for SFTP or SCP, then you need to use /usr/local/etc/jsh.d/port.conf configuration file.
+
+First edit /etc/ssh/sshd_config as below, and restart the sshd service:
+```
+Port 22
+Port 65522
+```
+
+Then edit /usr/local/etc/jsh.d/port.conf as below:
+```
+strict_jsh_port 22
+strict_sftp_port 65522
+```
+
+The port rules will take effect the next time you log in via SSH or SFTP.
