@@ -1,7 +1,7 @@
 /*
  * jsh, a simple jailed shell based on libocli.
  *
- * Copyright (C) 2022-2023 Digger Wu (digger.wu@linkbroad.com)
+ * Copyright (C) 2022-2024 Digger Wu (digger.wu@linkbroad.com)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,6 +50,13 @@
 
 #define FFLAG(f, x) ((f & x) == x)
 
+#define MAX_SFTP_BYPASS_DIRS	256
+static char **sftp_bypass_dirs = NULL;
+static int sftp_bypass_num = 0;
+
+static void init_sftp_bypass_dirs(void);
+static int is_sftp_bypass_dir(char *path);
+
 static int jtrace_sftp_server(pid_t pid, int argc, char **argv);
 static int jtrace_vim(pid_t pid, int argc, char **argv);
 
@@ -78,6 +85,64 @@ jtrace(pid_t pid, int argc, char **argv)
 }
 
 /*
+ * Read bypass dirs from /usr/local/etc/jsh.d/sftp.bypass
+ */
+static void
+init_sftp_bypass_dirs()
+{
+	FILE	*fp;
+	char	buf[512], *path, *tok;
+	int	i = 0;
+	struct stat stat_buf;
+
+	if (!sftp_bypass_dirs &&
+	    !(sftp_bypass_dirs = malloc(sizeof(char *) * MAX_SFTP_BYPASS_DIRS))) {
+		syslog(LOG_ERR, "Init sftp_bypass malloc: %s", strerror(errno));
+		return;
+	}
+	bzero(sftp_bypass_dirs, sizeof(char *) * MAX_SFTP_BYPASS_DIRS);
+
+	if (!(fp = fopen(JSH_SFTP_BYPASS, "r")))
+		return;
+
+	while (fgets(buf, sizeof(buf), fp) && i < MAX_SFTP_BYPASS_DIRS) {
+		if (!(tok = strtok(buf, " \t\r\n")) || *tok != '/')
+			continue;
+
+		if (stat(tok, &stat_buf) == 0 && (path = strdup(tok))) {
+			sftp_bypass_dirs[i] = path;
+			syslog(LOG_DEBUG, "set sftp_bypass_dirs[%d] = %s", i, path);
+			i++;
+		}
+	}
+
+	fclose(fp);
+	sftp_bypass_num = i;
+	return;
+}
+
+/*
+ * Test if given path match any sftp bypass dir 
+ */
+static int
+is_sftp_bypass_dir(char *path)
+{
+	int	i, len;
+
+	if (!path || !*path || !sftp_bypass_dirs || sftp_bypass_num == 0)
+		return 0;
+
+	for (i = 0; i < sftp_bypass_num; i++) {
+		len = strlen(sftp_bypass_dirs[i]);
+		if (strncmp(path, sftp_bypass_dirs[i], len) == 0 &&
+		    (!path[len] || path[len] == '/')) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+/*
  * Jailed tracing specific for sftp-server
  */
 static int
@@ -92,6 +157,8 @@ jtrace_sftp_server(pid_t pid, int argc, char **argv)
 	char	call_info[512];
 	int	status = 0;
 	int	res = 0;
+
+	init_sftp_bypass_dirs();
 
 	/*
 	 * injail: Set TURE if (lstat/stat/openat, open WR, or
@@ -160,7 +227,8 @@ jtrace_sftp_server(pid_t pid, int argc, char **argv)
 					     strncmp(path_info, "/lib/", 5) == 0 ||
 					     strncmp(path_info, "/usr/lib64/", 11) == 0 ||
 					     strncmp(path_info, "/usr/lib/", 9) == 0 ||
-					     strncmp(path_info, "/proc/sys/", 10) == 0)) {
+					     strncmp(path_info, "/proc/sys/", 10) == 0 ||
+					     is_sftp_bypass_dir(path_info))) {
 						syslog(LOG_DEBUG, "bypass %s\n", call_info);
 					} else
 					/*

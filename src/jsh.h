@@ -1,7 +1,7 @@
 /*
  * jsh, a simple jailed shell based on libocli.
  *
- * Copyright (C) 2022 Digger Wu (digger.wu@linkbroad.com)
+ * Copyright (C) 2022-2024 Digger Wu (digger.wu@linkbroad.com)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,6 +39,7 @@ extern int home_jailed;
 #define JSH_PORT_CONF	"/usr/local/etc/jsh.d/port.conf"
 #define JSH_MAN_CONF	"/usr/local/etc/jsh.d/man.conf"
 #define JSH_BANNER	"/usr/local/etc/jsh.d/banner.txt"
+#define JSH_SFTP_BYPASS	"/usr/local/etc/jsh.d/sftp.bypass"
 
 #define SFTP_SERVER	"/usr/libexec/openssh/sftp-server"
 
