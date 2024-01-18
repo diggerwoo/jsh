@@ -1,0 +1,37 @@
+#
+# The jailing of sftp behaves differently on different Linux distributions.
+#
+# You need enable debug if you experience sftp jailing problem.
+#
+# In debug logs, you will see lots of open() lines when sftp-server starts.
+# The paths opened are system library, or configuration files, e.g. :
+#
+#   Start tracing /usr/libexec/openssh/sftp-server
+#   open("/etc/ld.so.cache", O_RDONLY|O_CLOEXEC <0x80000>) = 3
+#   open("/lib64/libcrypto.so.10", O_RDONLY|O_CLOEXEC <0x80000>) = 3
+#   ...
+#   open("/dev/null", O_RDWR <0x2>) = 3
+#   open("/etc/nsswitch.conf", O_RDONLY|O_CLOEXEC <0x80000>) = 3 
+#
+# Till you see below "injail triggered by ..." line, then sftp jailing mode
+# starts:
+# 
+#   injail triggered by openat(<some path...>) ...
+#
+# The condition triggers this log is slightly tricky, this might depend on
+# different OpenSSH or GLIBC versions. The code in jtrace.c was really the
+# result I got in my CentOS 7.x environment.
+#
+# In jailing mode, the open()/openat() calls of all paths should occur after
+# the stat()/lstat() call for the same path. That is to say, when your sftp
+# client tries to call get/put sth. , sftp-server always calls stat()/lstat()
+# to confirm whether the path exists. This is the key point of sftp jailing.
+#
+# In jailing mode, if you see unexpected "deny open()/openat()" debug logs
+# for some paths, and that really affect your sftp jailing, then you need to
+# add the path into this configuration file, with one path for each line.
+#
+# For example:
+#   /usr/local/etc
+#   /usr/local/lib
+#
