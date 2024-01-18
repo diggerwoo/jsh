@@ -234,7 +234,12 @@ For example, to enable debug mode for the user "jailuser":
 touch /home/jailuser/.jsh_debug
 ```
 
-### 5.4 Strictly limit SSH and SFTP service ports
+### 5.4 sftp.bypass
+
+In case of sftp jailing with debug mode enabled, if you see unexpected "deny open()/openat()" debug logs for some paths and that really affect your sftp jailing, then you need to add the path into sftp.bypass configuration file. Carefully read the comments in /usr/local/etc/jsh.d/sftp.bypass .
+
+
+### 5.5 Strictly limit SSH and SFTP service ports
 
 If you need to limit different service ports for SSH and SFTP, for example, port 22 is only used for SSH to access jsh, and another high port 65522 is only used for SFTP or SCP, then you need to use /usr/local/etc/jsh.d/port.conf configuration file.
 
