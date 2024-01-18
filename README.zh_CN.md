@@ -237,7 +237,12 @@ jsh 提供一个详细调试手段，可以跟踪详细的文件/目录的 jail 
 touch /home/jailuser/.jsh_debug
 ```
 
-### 5.4 严格限定 SSH 和 SFTP 服务端口
+### 5.4 sftp.bypass
+
+在调试模式下使用 sftp 的过程中，如果你看到某些路径出现意外的 “deny open()/openat()” 调试日志，并且这确实影响了 SFTP Jailing，那么你需要将这些路径添加到 sftp.bypass 配置文件中。请仔细阅读 /usr/local/etc/jsh.d/sftp.bypass 中的注释信息。
+
+
+### 5.5 严格限定 SSH 和 SFTP 服务端口
 
 如果你需要为 SSH 和 SFTP 限定不同的服务端口，比如端口 22 仅用于 SSH 访问 jsh，另开一个高端口 65522 仅用于 SFTP 或 SCP，那么需要使用到 /usr/local/etc/jsh.d/port.conf 配置文件。
 
