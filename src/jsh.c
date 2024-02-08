@@ -396,16 +396,18 @@ jsh_port_init()
 			continue;
 
 		if (strcmp(key, "strict_jsh_port") == 0) {
-		    if ((val = strtok(NULL, " \t\r\n")) &&
-			(port = atoi(val)) > 0 && port < 65536)
-			strict_jsh_port = port;
-			syslog(LOG_INFO, "set strict_jsh_port = %d", port);
+			if ((val = strtok(NULL, " \t\r\n")) &&
+			    (port = atoi(val)) > 0 && port < 65536) {
+				strict_jsh_port = port;
+				syslog(LOG_INFO, "set strict_jsh_port = %d", port);
+			}
 
 		} else if (strcmp(key, "strict_sftp_port") == 0) {
-		    if ((val = strtok(NULL, " \t\r\n")) &&
-			(port = atoi(val)) > 0 && port < 65536)
-			strict_sftp_port = port;
-			syslog(LOG_INFO, "set strict_sftp_port = %d", port);
+			if ((val = strtok(NULL, " \t\r\n")) &&
+			    (port = atoi(val)) > 0 && port < 65536) {
+				strict_sftp_port = port;
+				syslog(LOG_INFO, "set strict_sftp_port = %d", port);
+			}
 		}
 	}
 
