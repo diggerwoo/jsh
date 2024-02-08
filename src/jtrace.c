@@ -136,6 +136,7 @@ is_sftp_bypass_dir(char *path)
 		len = strlen(sftp_bypass_dirs[i]);
 		if (strncmp(path, sftp_bypass_dirs[i], len) == 0 &&
 		    (!path[len] || path[len] == '/')) {
+			syslog(LOG_DEBUG, "%s matched sftp_bypass_dirs[%d]", path, i);
 			return 1;
 		}
 	}
@@ -154,7 +155,7 @@ jtrace_sftp_server(pid_t pid, int argc, char **argv)
 	int	flags;
 	char	path_info[256], path_dest[256];
 	char	flags_info[64];
-	char	call_info[512];
+	char	call_info[800];
 	int	status = 0;
 	int	res = 0;
 
@@ -353,6 +354,35 @@ jtrace_sftp_server(pid_t pid, int argc, char **argv)
 					}
 				}
 
+			} else {
+				incall = 0;
+				syslog(LOG_DEBUG, "%s = %lld\n", call_info, regs.rax);
+			}
+
+		} else if (regs.orig_rax == __NR_prctl) {
+
+			/* sftp-server >= 6.7 calls prctl(4, 0, ...) to set SUID_DUMP_DISABLE (0),
+			 * modify arg2 to SUID_DUMP_USER (1) to avoid EIO error of ptrace PEEKDATA.
+			 */
+			if (incall == 0) {
+				incall = 1;
+				path = (char *) regs.rdi;
+				snprintf(call_info, sizeof(call_info),
+					"%s(%lld, %lld, ...)",
+					get_callname(regs.orig_rax), regs.rdi, regs.rsi);
+				if (regs.rdi == 4 && regs.rsi == 0) {
+					regs.rsi = 1;
+					syslog(LOG_DEBUG, "change arg2 of %s to %lld\n",
+						call_info, regs.rsi);
+					snprintf(call_info, sizeof(call_info),
+						"%s(%lld, %lld, ...)",
+						get_callname(regs.orig_rax), regs.rdi, regs.rsi);
+					if ((res = ptrace(PTRACE_SETREGS, pid, 0, &regs)) < 0) {
+						syslog(LOG_ERR, "jtrace-sftp redirect %s: %s\n",
+							call_info, strerror(errno));
+						break;
+					}
+				}
 			} else {
 				incall = 0;
 				syslog(LOG_DEBUG, "%s = %lld\n", call_info, regs.rax);
@@ -560,6 +590,8 @@ get_callname(long nr)
 		return "link";
 	case __NR_rename:
 		return "rename";
+	case __NR_prctl:
+		return "prctl";
 	default:
 		break;
 	}
@@ -622,7 +654,11 @@ jtrace_get_string(pid_t pid, char *addr, char *buf, int buflen)
 		/* Clear errno as suggested by man ptrace */
 		errno = 0;
 		*((long *) ptr) = ptrace(PTRACE_PEEKDATA, pid, addr + offset);
-		if (errno) break;
+		if (errno) {
+			syslog(LOG_DEBUG, "ptrace PEEKDATA 0x%lx %d : %s\n",
+				(__uint64_t) addr, offset, strerror(errno));
+			break;
+		}
 
 		for (i = 0; i < sizeof(long); i++) {
 			if (!*(ptr + i))
